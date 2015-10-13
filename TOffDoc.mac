@@ -1,0 +1,485 @@
+/* toffdocxml.mac                                           */
+/* Библотека создания офисных документов на основе шаблонов */
+Import rslx;
+import globals;
+import rcw;
+import rsexts;
+import "info-zip.d32";
+
+
+private macro XML_EscapeSting(s)
+    if (ValType(s)==V_UNDEF) return ""; end;
+    /*
+    s = StrSubst ( s, "&", "&amp;");
+    s = StrSubst ( s, "<", "&lt;");
+    s = StrSubst ( s, "<", "&gt;");
+    s = StrSubst ( s, "'", "&apos;");
+    s = StrSubst ( s, "\"", "&quot;");
+    */
+    return String(s);
+end; /* macro XML_EscapeSting */
+
+
+class TBaseXmlDoc(strTemplate_)
+    var DOMDOC;
+    var strFormPath=strTemplate_;
+    var strFolder=strTemplate_;
+    var strBaseName:String;
+    var strWorkDir:String;
+    var strFormFolder:String;
+    var strFormName:String;
+    var strFormExt:String;
+    var Verbose=false;
+    var strTemplate;              /* Путь к файлу шаблона                          */
+
+    macro DebugPrint(s)
+        if (Verbose)
+            PrintLn(s);
+        end;
+    end; /* macro DebugPrint */
+
+    macro GetDirUID
+        return "odtxml"+GetApplicationKey();
+        //return "odtxml"+String(date())+String(Time());
+    end; /* macro GetDirUID */
+
+    private macro InArray(a,v)
+        var i:integer=0;
+        if (ValType(a)!=V_GENOBJ) return false; end;
+        while(i<a.Size)
+            if(a(i)==v) return true; end;
+            i=i+1;
+        end;
+        return false;
+    end; /* macro InArray */
+
+    macro DocConstructor()
+
+        strFormFolder=SplitFile (strFormPath, strFormName, strFormExt);
+        strBaseName=GetDirUID();
+        strWorkDir=GetSysDir(0)+strBaseName;
+        strFolder=strFormName;
+
+        strTemplate="..\\Templs\\user_mac\\"+strFormName + strFormExt;
+
+        /* */
+
+        DOMDOC = ActiveX("MSXML.DOMDocument");
+
+        DOMDoc.async = False;
+
+    end; //macro DocConstructor
+
+    DocConstructor();
+
+end; //class TBaseXmlDoc
+
+
+class (TBaseXmlDoc) OpenDocForm(strFormPath_)
+    //var DOMDOC;
+    //var strFolder=strFormPath;
+    //var strBaseName:String;       /* Имя отчета, длинная бестолковая фигня         */
+    var strDefTableName="Таблица1";/* Имя таблицы                                   */
+    var strTableName;             /* Имя таблицы                                   */
+    var domTableNode;             /* Объект Таблица, если используется             */
+    var iTableFooterRows=0;       /* Строк в хвосте таблицы после строки-образца, 
+                                    если они есть надо проинициализировать до вызова таблицы  */
+    var domNewRowNode;            /* Объект Образцовая строка                      */
+    var iRow;                     /* Содержит счетчик строк в текущей Таблице      */
+    var domRow;                   /* Временная переменная для сохранения ссылки    */ 
+                                  /* на строку в Таблице которая будет заполняться */
+    var bRemoveOnServer=True;     /* Удалять промежуточный файл на сервере         */
+    var strReportName:String;     /* Имя файла отчета, если не заполнится, UID     */
+    var InitOk;                   /* Флаг успешной инициализации                   */         
+    var bSaveCalled:Bool=false;   /* Флаг вызова метода Save                       */ 
+    var AutoPrint=false;          /* Флаг автоматической печати на def принтер     */
+    var Printer;                  /* Принтер для печати, отличный от умолчального  */
+    var strSectionName="Раздел1"; /* Имя раздела-шаблона                           */
+    var strSectionBaseName:String;/* Имя раздела-шаблона                           */
+    var domSectionNode;           /* Объект раздел, если используется              */
+    var domSectionNewNode;        /* Объект раздел-шаблон                          */
+    var iSection=0;               /* Счётчик разделов                              */
+    var aSectionFields;           /* Названия полей, зависимых от раздела          */
+    /* var domUserFieldDecl;         /* */*/
+
+
+
+    /* Является ли данная переменная зависимой от контекста раздела */
+    macro IsSectionField(strFieldName)
+        return InArray(aSectionFields,strFieldName)
+    end; /* macro IsSectionField */
+
+
+    macro Init2(paramInit)
+
+        macro UnZipContent
+            //var zipFile=OpenZip(strTemplate);
+            var strZipItemName:String;
+            var strDst;
+            var iZipErr:Integer;
+
+            if (not MakeDir (strWorkDir))
+                MsgBox("can not create "+strWorkDir);
+                return false;
+            end;
+
+            iZipErr=izUnzip(strTemplate, strWorkDir+"\\", "content.xml");
+            if(iZipErr)
+                MsgBox("Ошибка "+String(iZipErr)+" при распаковки архива "+strTemplate+" в "+strWorkDir);
+                return false;
+            end;
+            return true;
+
+        /* */
+        onerror(er)
+            msgbox(er.Message + " (строка " + er.line + ")");
+            return false;
+        /*    */
+        end; /* UnZipContent */
+
+        InitTBaseXmlDoc(paramInit);
+
+        if(not UnZipContent())
+            return false;
+        end;
+        /* */
+
+        if (not DOMDoc.Load(strWorkDir+"\\content.xml"))
+            PrintLn("Error load XML: "+strWorkDir+"\\content.xml");
+            DOMDoc=null;
+            return false;    
+        end;
+
+        DOMDoc.setProperty("SelectionLanguage", "XPath");
+        DOMDoc.setProperty("SelectionNamespaces", "xmlns:text='urn:oasis:names:tc:opendocument:xmlns:text:1.0' xmlns:office='urn:oasis:names:tc:opendocument:xmlns:office:1.0' xmlns:table='urn:oasis:names:tc:opendocument:xmlns:table:1.0'");
+        return true;
+    end; /* macro Init */
+    
+
+
+    macro SetField(strFieldName, v)
+        var strValueType:String;
+        var strXmlType:String;
+        var strXPath:String;
+        var domNodes, domNode;
+
+        if (not InitOk) return false; end;
+
+        if (IsSectionField(strFieldName))
+            if (iSection==0)
+                MsgBox("Попытка установить зависящую от раздела переменную "+strFieldName+" вне контекста раздела");
+                return false;
+            end;
+            strFieldName=domSectionNode.getAttribute("text:name")+"_"+strFieldName;
+        end;
+
+        strXPath="//text:user-field-decl[@text:name='"+strFieldName+"']";
+        DebugPrint(strXPath);
+        domNodes=DOMDoc.documentElement.selectNodes(strXPath);
+        if (domNodes.length==0)
+            MsgBox("В шаблоне поле "+strFieldName+" не найдено ");
+            return false;
+        end;
+        domNode=domNodes.Item(0);
+
+        strValueType=domNode.GetAttribute("office:value-type");
+
+        if   ("string"==strValueType)
+            strXmlType="string-value";
+        elif ( "float"==strValueType)
+            strXmlType="value";
+        else
+            strXmlType="value";
+        end;
+        strXmlType="office:"+strXmlType;
+
+        domNode.setAttribute(strXmlType, v);
+
+        onerror(er)
+            msgbox(er.Message + " (строка " + er.line + ")|"+"Ошибка установки значения ["+String(v)+"]| поля ["+strFieldName+"]");
+            return false;
+    end; /* macro SetField */
+
+    macro SetVariable(strFieldName, v)
+        var strValueType:String;
+        var strXmlType:String;
+        var domNodes, domNode;
+
+        if (not InitOk) return false; end;
+
+        domNodes=DOMDoc.documentElement.selectNodes("//text:variable-set[@text:name='"+strFieldName+"']");
+        if (domNodes.length==0)
+            MsgBox("В шаблоне переменная "+strFieldName+" не найдена ");
+            return false;
+        end;
+        domNode=domNodes.Item(0);
+
+        strValueType=domNode.GetAttribute("office:value-type");
+
+        if   ("string"==strValueType)
+            strXmlType="string-value";
+        elif ( "float"==strValueType)
+            strXmlType="value";
+        else
+            strXmlType="value";
+        end;
+        strXmlType="office:"+strXmlType;
+
+        domNode.setAttribute(strXmlType, v);
+    end; /* macro SetVariable */
+
+
+    macro Save()
+        bSaveCalled=True;
+        if (not InitOk) return false; end;
+
+        DOMDoc.Save(strWorkDir+"\\content.xml");
+
+        if ((ValType(strReportName)==V_UNDEF) or (strReportName==""))
+            strReportName=strBaseName;
+        end;
+        var zipFilePath=strWorkDir+"\\" +strReportName+".odt";
+        if (not CopyFile (strTemplate, zipFilePath))
+            PrintLn("Ошибка копирования "+strTemplate+"->"+zipFilePath);
+            return false;
+        end;
+
+
+        var iZipErr=izZip(strReportName+".odt", strWorkDir, "content.xml");
+        if(iZipErr)
+            MsgBox("Ошибка " + String(iZipErr) + " при добавлении " + "content.xml в " + strReportName+".odt" + " в "+strWorkDir );
+            return false;
+        else
+            RemoveFile(strWorkDir+"\\content.xml");
+        end;
+        /* Копирование на терминал */
+        var strTermDst=strBaseName+".odt";
+        if (CopyFile(zipFilePath, "$"+strTermDst))
+            if (bRemoveOnServer)
+               RemoveFile(zipFilePath);
+               RemoveDir(strWorkDir);
+            end;
+            DebugPrint("Файл перемещен на терминал");
+            var strArgs:String;
+            strArgs=strTermDst;
+            if (AutoPrint)
+                if ((ValType(Printer)!=V_UNDEF) and (Printer!=""))
+                    strArgs="-pt " +Printer+ " "+ strArgs;
+                else
+                    strArgs="-p" + strArgs;
+                end;
+            end;
+            StartProg ("$"+"swriter", strArgs, true);
+        else
+            PrintLn("Ошибка переноса на терминал " + zipFilePath + " -> " + strTermDst);
+            return false;
+        end;
+        return true;
+    end;
+
+    /* Инициализация таблицы для вывода */
+    macro Table(sParamName)
+        var strXPath:String;
+        var domNodes;
+
+        if (not InitOk) return false; end;
+
+        if ((valtype(sParamName)==V_UNDEF) or (sParamName==""))
+            strTableName=strDefTableName;
+        else
+            strTableName=sParamName;
+        end;
+
+        /**/
+        if  (ValType(domSectionNewNode)!=V_UNDEF)
+        /* Если определён раздел-шаблон, то ищем в нём, если находим, 
+           то это повторяющаяся таблица и к её имени надо приписывать имя раздела */
+            DebugPrint("Table: section detected");
+            strXPath=".//table:table[@table:name='"+strTableName+"']";
+            DebugPrint(strXPath);
+            domNodes=domSectionNewNode.selectNodes(strXPath);
+            DebugPrint("Table: table in section = "+String(domNodes.length));
+            if (domNodes.length==1)
+                strTableName=domSectionNode.getAttribute("text:name") + " " + strTableName;
+                DebugPrint("Table: change ["+sParamName+"] to ["+strTableName+"]");
+            end;
+        end;
+        /**/
+
+        strXPath="//table:table[@table:name='"+strTableName+"']";
+        DebugPrint(strXPath);
+        domNodes=DOMDoc.documentElement.selectNodes(strXPath);
+        if (domNodes.length==0)
+            MsgBox("В шаблоне не найдено таблицы "+strTableName+"");
+            return false;
+        end;
+        domTableNode=domNodes.Item(0);
+        DebugPrint(domTableNode.nodeName);
+
+        if (iTableFooterRows>0)
+            strXPath="table:table-row[last()-"+String(iTableFooterRows)+"]";
+        else
+            strXPath="table:table-row[last()]";
+        end;
+        DebugPrint(strXPath);
+        domRow=domTableNode.selectNodes(strXPath).Item(0);
+        DebugPrint(domRow.nodeName);
+        domNewRowNode=domRow.cloneNode(true);
+        iRow=0;
+    end; /* macro Table */
+
+    /* Записать переданный массив как строку ранее опрделённой таблицы см. Table() */
+    macro WriteRow(ar)
+        var strXPath:String;
+        var i:Integer;
+        var domCell;
+
+        if (not InitOk) return false; end;
+
+        if (not IsEqClass ("TArray", ar))    return false; end;
+        if (V_UNDEF==Valtype(domTableNode))  Table(); end;
+        if (iRow>0)
+            if (iTableFooterRows>0)
+                domRow=domTableNode.insertBefore(domNewRowNode.cloneNode(true),domTableNode.selectNodes("table:table-row[last()-"+String(iTableFooterRows)+"+1]").Item(0));
+            else
+                domRow=domTableNode.appendChild(domNewRowNode.cloneNode(true));
+            end;
+        end;
+        for (i, 0, ar.Size-1, 1)
+            strXPath="table:table-cell["+String(i+1)+"]/text:p";
+            domCell=domRow.selectNodes(strXPath).Item(0);
+            DebugPrint(strXPath + " " + domCell.nodeName);
+            if (valtype(ar[i])!=V_UNDEF)
+                domCell.text=XML_EscapeSting(ar[i]);
+            end;
+        end;
+        iRow=iRow+1;
+    end; /* macro WriteRow */
+
+    macro SetSectionBaseName
+        var i;
+
+        for(i,StrLen(strSectionName),0,-1)
+            if (StrIsNumber(SubStr(strSectionName,i)))
+            else
+                strSectionBaseName=SubStr(strSectionName,1,i);
+                return;
+            end;
+        end;
+        strSectionBaseName="Section";
+    end; /* macro SetSectionBaseName */
+
+    private macro SectionRename
+        /* <text:section text:name="Шублон" text:style-name="Sect1"> */
+        domSectionNode.setAttribute("text:name")=strSectionBaseName+String(iSection);
+    end; /* macro SectionRename */
+
+    /* определяет раздел-шаблон */
+    macro Section(sParamName)
+        var strXPath:String;
+
+        if (not InitOk) return false; end;
+
+        if ((valtype(sParamName)!=V_UNDEF) and (sParamName!=""))
+            strSectionName=sParamName;
+        end;
+
+        /* <text:section text:name="Шублон" text:style-name="Sect1"> */
+        strXPath="//text:section[@text:name='"+strSectionName+"']";
+        domSectionNode=DOMDoc.documentElement.selectNodes(strXPath).Item(0);
+        DebugPrint(domSectionNode.nodeName);
+        domSectionNewNode=domSectionNode.cloneNode(true);
+
+        SetSectionBaseName();
+    end; /* macro Section */
+
+    /* копирует ранее определённый раздел-шаблон */
+    macro SectionNew()
+        if (ValType(domSectionNewNode)==V_UNDEF)
+            return false;
+        end;
+        var domSectionInsertedNode=domSectionNode.parentNode.insertBefore(domSectionNewNode.cloneNode(true),domSectionNode.nextSibling);
+        domSectionNode=domSectionInsertedNode;
+    end; /* macro SectionNew() */
+
+    /* для таблиц внутри раздела добаввляет спереди имя раздела */
+    private macro SectionTableRename
+        var strXPath="table:table";
+        var domSectionTables=domSectionNode.selectNodes(strXPath);
+        var i;
+        var strName;
+        for(i,0,domSectionTables.length-1,1)
+            strName=domSectionTables.Item(i).getAttribute("table:name");
+            strName=domSectionNode.getAttribute("text:name") + " " + strName;
+            domSectionTables.Item(i).setAttribute("table:name", strName);
+        end;
+    end; /* macro SectionTableRename */
+
+    /*  */
+    macro SetSectionFields()
+        aSectionFields=TArray(Parmcount());
+        var i:integer;
+
+        for (i, 1, Parmcount()-1, 1)
+            GetParm(i,aSectionFields[i-1]);
+        end;
+    end;
+
+
+    /* изменяет названия пользовательских полей в контексте раздела */
+    private macro SectionFieldsRename()
+        if (not IsEqClass ("TArray", aSectionFields))    
+            return false; 
+        end;
+        var strXPath;
+        var i, j;
+        var domNode, domNodes;
+        /**/
+        for (i, 0, aSectionFields.Size-1, 1)
+
+            strXPath=".//text:user-field-get[@text:name='"+aSectionFields(i)+"']";
+            DebugPrint(strXPath);
+            domNodes=domSectionNode.selectNodes(strXPath);
+            for (j, 0, domNodes.length-1, 1)
+                DebugPrint("Found "+ j + " "+domNodes.Item(j).getAttribute("text:name"));
+                domNodes.Item(j).setAttribute("text:name", domSectionNode.getAttribute("text:name")+"_"+aSectionFields(i));
+            end;
+
+            strXPath="//text:user-field-decl[@text:name='"+aSectionFields(i)+"']";
+            domNode=domDoc.documentElement.selectNodes(strXPath).Item(0);
+            var domNewVar=domNode.parentNode.appendChild(domNode.cloneNode(true));
+            domNewVar.setAttribute("text:name", domSectionNode.getAttribute("text:name")+"_"+aSectionFields(i));
+            
+        end;
+    end; /* macro SectionFieldsRename */
+
+
+    /* вызывать в начале тела цикла вывода раздела */
+    macro SectionAdd
+        if (0==iSection)
+        /* первый раздел. используется тот, что есть */
+            iSection=1;
+        else
+        /* не первый раздел. вставляется новый       */
+            SectionNew();
+            iSection=iSection+1;
+        end;
+        SectionRename();
+        SectionTableRename();
+        SectionFieldsRename();
+    end; /* macro SectionAdd */
+
+
+    macro Destructor()
+
+        if (not InitOk) return; end;
+
+        if (not bSaveCalled) 
+            Save(); 
+        End;
+    end; /* macro Destructor */
+
+    /* Constructor */
+    InitOk=Init2(strFormPath_);
+end;
+
