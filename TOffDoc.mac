@@ -30,8 +30,8 @@ class TBaseXmlDoc(strTemplate_)
     var strFormFolder:String;
     var strFormName:String;
     var strFormExt:String;
-    var Verbose=false;
-    var bRemoveOnServer=True;     /* Удалять промежуточный файл на сервере         */
+    var Verbose=true;          //!!!
+    var bRemoveOnServer=false; //!!!    /* Удалять промежуточный файл на сервере         */
     var strTemplate;              /* Путь к файлу шаблона                          */
     var InitOk;                   /* Флаг успешной инициализации                   */         
     var strReportName:String;     /* Имя файла отчета, если не заполнится, UID     */
@@ -562,7 +562,6 @@ class (TBaseXmlDoc) TMsDocForm(strFormPath_)
 
     macro Init2(paramInit)
         
-        DebugBreak();
 
         InitTBaseXmlDoc(paramInit);
 
@@ -596,9 +595,11 @@ class (TBaseXmlDoc) TMsDocForm(strFormPath_)
         var strXPath:String;
         var domNodes, domNode;
         var domNewNode;
+        var i,j;
 
         if (not InitOk) return false; end;
 
+        // 1. Установка значения поля в Settings
         strXPath="//w:docVar[@w:name='"+strFieldName+"']";
         DebugPrint(strXPath);
         domNodes=domSettings.documentElement.selectNodes(strXPath);
@@ -622,6 +623,25 @@ class (TBaseXmlDoc) TMsDocForm(strFormPath_)
             domNode=domNodes.Item(0);
         end;
         domNode.setAttribute("w:val", v);
+
+        DebugBreak();
+        // 2. Установка значения поля в Document
+        // Если ничего не делать с документом, то при открытии поля будут "старые" и только после Cltr-A F9 они обновятся
+        strXPath="//w:r[starts-with(normalize-space(w:instrText),'DOCVARIABLE "+strFieldName+" ' ) or normalize-space(w:instrText)='DOCVARIABLE "+strFieldName+"']";
+        DebugPrint(strXPath);
+
+        //пока выбираем упрощённый вариант, инвалидиуем поля. в этом случае ворд при открытии будет спрашивать обновить? скажем ему да и поля обновятся
+        //в будущем надо переписать на замену куска DOM см. http://officeopenxml.com/WPfields.php
+        var domNodesBegin;
+        domNodes=domDoc.documentElement.selectNodes(strXPath);
+        for (i, 0, domNodes.length-1, 1)
+            strXPath="preceding-sibling::w:r/w:fldChar[@w:fldCharType='begin' and last()]";
+            domNodesBegin=domNodes.item(i).selectNodes(strXPath);
+            for (j, 0, domNodesBegin.length-1, 1)
+                domNodesBegin.item(j).setAttribute("w:dirty","true");
+            end; //for j
+        end; //for i
+
     end; //macro SetField
 
     macro Save()
