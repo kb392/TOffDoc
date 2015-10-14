@@ -5,6 +5,7 @@ import globals;
 import rcw;
 import rsexts;
 import "info-zip.d32";
+import "constxml.mac";
 
 
 private macro XML_EscapeSting(s)
@@ -30,7 +31,11 @@ class TBaseXmlDoc(strTemplate_)
     var strFormName:String;
     var strFormExt:String;
     var Verbose=false;
+    var bRemoveOnServer=True;     /* Удалять промежуточный файл на сервере         */
     var strTemplate;              /* Путь к файлу шаблона                          */
+    var InitOk;                   /* Флаг успешной инициализации                   */         
+    var strReportName:String;     /* Имя файла отчета, если не заполнится, UID     */
+    var aZipFiles=TArray();       /* Массив имён файлов для распаковки/запаковки   */
 
     macro DebugPrint(s)
         if (Verbose)
@@ -43,6 +48,16 @@ class TBaseXmlDoc(strTemplate_)
         //return "odtxml"+String(date())+String(Time());
     end; /* macro GetDirUID */
 
+    macro LoadXml(xmlDoc, strFile)
+        if (not xmlDoc.Load(strWorkDir+"\\"+strFile))
+            PrintLn("Error load XML: "+strWorkDir+"\\"+strFile);
+            xmlDoc=null;
+            return false;
+        end;
+        return true;
+    end;
+
+
     private macro InArray(a,v)
         var i:integer=0;
         if (ValType(a)!=V_GENOBJ) return false; end;
@@ -52,6 +67,115 @@ class TBaseXmlDoc(strTemplate_)
         end;
         return false;
     end; /* macro InArray */
+
+    macro UnZipFile()
+        var strFileName;
+        //var zipFile=OpenZip(strTemplate);
+        var strZipItemName:String;
+        var strDst;
+        var iZipErr:Integer;
+
+        if (not MakeDir (strWorkDir))
+            MsgBox("can not create "+strWorkDir);
+            return false;
+        end;
+
+        var i;
+        for (i,1,Parmcount()-1,1)
+            GetParm(i, strFileName);
+            aZipFiles[aZipFiles.Size]=strFileName; //запоминаем имена распакованных файлов для последующей запаковки
+
+            strFileName=StrSubst(strFileName,"\\","/"); // in zip folder/folder/folder/file
+            iZipErr=izUnzip(strTemplate, strWorkDir+"\\", strFileName);
+            if(iZipErr)
+                MsgBox("Ошибка "+String(iZipErr)+" при распаковки файла "+strFileName+" из архива "+strTemplate+" в "+strWorkDir);
+                return false;
+            end;
+        end;
+
+        return true;
+
+    /* */
+    onerror(er)
+        msgbox(er.Message + " (строка " + er.line + ")");
+        return false;
+    /*    */
+    end; /* UnZipContent */
+
+    /*
+    macro GetXPathItems(strXPath, elem)
+
+        /*if (DOMDOC.documentElement==NullVal)
+            return false;
+        end;*/
+
+        if (ValType(elem)==V_UNDEF)
+            elem=domDoc.documentElement;
+        end;
+
+        var domNodes=elem.selectNodes(strXPath);
+        return domNodes;
+    end; //macro GetXPath
+
+    macro GetXPath(strXPath, elem)
+
+        /*if (oXML.documentElement==NullVal)
+            return false;
+        end;*/
+
+        if (ValType(elem)==V_UNDEF)
+            elem=domDoc.documentElement;
+        end;
+
+        var domNodes=elem.selectNodes(strXPath);
+        if (domNodes.Length>0)
+            return Trim(domNodes.item(0).text);
+        end;
+
+        return "";
+    end; //macro GetXPath
+    */
+
+    macro DocSave(strTermDst:@String)
+        var iZipErr;
+
+        if ((ValType(strReportName)==V_UNDEF) or (strReportName==""))
+            strReportName=strBaseName;
+        end;
+
+        var zipFilePath=strWorkDir+"\\" +strReportName+strFormExt;
+        if (not CopyFile (strTemplate, zipFilePath))
+            PrintLn("Ошибка копирования "+strTemplate+"->"+zipFilePath);
+            return false;
+        end;
+
+        var strFile;
+        for(strFile, aZipFiles)
+            iZipErr=izZip(strReportName+strFormExt, strWorkDir, strFile);
+            if(iZipErr)
+                MsgBox("Ошибка " + String(iZipErr) + " при добавлении " + strFile+ " в " + strReportName+strFormExt + " в "+strWorkDir );
+                return false;
+            else
+                RemoveFile(strWorkDir+"\\"+strFile);
+            end;
+        end;
+
+        /* Копирование на терминал */
+        strTermDst=strBaseName+strFormExt;
+        if (CopyFile(zipFilePath, "$"+strTermDst))
+            if (bRemoveOnServer)
+               RemoveFile(zipFilePath);
+               RemoveDir(strWorkDir);
+            end;
+            DebugPrint("Файл перемещен на терминал");
+            return true;
+        else
+            PrintLn("Ошибка переноса на терминал " + zipFilePath + " -> " + strTermDst);
+        end;
+        return false;
+
+    end; //DocSave
+
 
     macro DocConstructor()
 
@@ -88,9 +212,6 @@ class (TBaseXmlDoc) OpenDocForm(strFormPath_)
     var iRow;                     /* Содержит счетчик строк в текущей Таблице      */
     var domRow;                   /* Временная переменная для сохранения ссылки    */ 
                                   /* на строку в Таблице которая будет заполняться */
-    var bRemoveOnServer=True;     /* Удалять промежуточный файл на сервере         */
-    var strReportName:String;     /* Имя файла отчета, если не заполнится, UID     */
-    var InitOk;                   /* Флаг успешной инициализации                   */         
     var bSaveCalled:Bool=false;   /* Флаг вызова метода Save                       */ 
     var AutoPrint=false;          /* Флаг автоматической печати на def принтер     */
     var Printer;                  /* Принтер для печати, отличный от умолчального  */
@@ -112,48 +233,21 @@ class (TBaseXmlDoc) OpenDocForm(strFormPath_)
 
     macro Init2(paramInit)
 
-        macro UnZipContent
-            //var zipFile=OpenZip(strTemplate);
-            var strZipItemName:String;
-            var strDst;
-            var iZipErr:Integer;
-
-            if (not MakeDir (strWorkDir))
-                MsgBox("can not create "+strWorkDir);
-                return false;
-            end;
-
-            iZipErr=izUnzip(strTemplate, strWorkDir+"\\", "content.xml");
-            if(iZipErr)
-                MsgBox("Ошибка "+String(iZipErr)+" при распаковки архива "+strTemplate+" в "+strWorkDir);
-                return false;
-            end;
-            return true;
-
-        /* */
-        onerror(er)
-            msgbox(er.Message + " (строка " + er.line + ")");
-            return false;
-        /*    */
-        end; /* UnZipContent */
-
         InitTBaseXmlDoc(paramInit);
 
-        if(not UnZipContent())
+        if(not UnZipFile("content.xml"))
             return false;
         end;
         /* */
 
-        if (not DOMDoc.Load(strWorkDir+"\\content.xml"))
-            PrintLn("Error load XML: "+strWorkDir+"\\content.xml");
-            DOMDoc=null;
+        if (not LoadXml(DOMDoc, "content.xml"))
             return false;    
         end;
 
         DOMDoc.setProperty("SelectionLanguage", "XPath");
         DOMDoc.setProperty("SelectionNamespaces", "xmlns:text='urn:oasis:names:tc:opendocument:xmlns:text:1.0' xmlns:office='urn:oasis:names:tc:opendocument:xmlns:office:1.0' xmlns:table='urn:oasis:names:tc:opendocument:xmlns:table:1.0'");
         return true;
-    end; /* macro Init */
+    end; /* macro Init2 */
     
 
 
@@ -229,37 +323,17 @@ class (TBaseXmlDoc) OpenDocForm(strFormPath_)
     end; /* macro SetVariable */
 
 
+
     macro Save()
         bSaveCalled=True;
         if (not InitOk) return false; end;
 
         DOMDoc.Save(strWorkDir+"\\content.xml");
 
-        if ((ValType(strReportName)==V_UNDEF) or (strReportName==""))
-            strReportName=strBaseName;
-        end;
-        var zipFilePath=strWorkDir+"\\" +strReportName+".odt";
-        if (not CopyFile (strTemplate, zipFilePath))
-            PrintLn("Ошибка копирования "+strTemplate+"->"+zipFilePath);
-            return false;
-        end;
+        DocSave();
 
-
-        var iZipErr=izZip(strReportName+".odt", strWorkDir, "content.xml");
-        if(iZipErr)
-            MsgBox("Ошибка " + String(iZipErr) + " при добавлении " + "content.xml в " + strReportName+".odt" + " в "+strWorkDir );
-            return false;
-        else
-            RemoveFile(strWorkDir+"\\content.xml");
-        end;
-        /* Копирование на терминал */
-        var strTermDst=strBaseName+".odt";
-        if (CopyFile(zipFilePath, "$"+strTermDst))
-            if (bRemoveOnServer)
-               RemoveFile(zipFilePath);
-               RemoveDir(strWorkDir);
-            end;
-            DebugPrint("Файл перемещен на терминал");
+        var strTermDst:String;
+        if (DocSave(@strTermDst))
             var strArgs:String;
             strArgs=strTermDst;
             if (AutoPrint)
@@ -271,7 +345,6 @@ class (TBaseXmlDoc) OpenDocForm(strFormPath_)
             end;
             StartProg ("$"+"swriter", strArgs, true);
         else
-            PrintLn("Ошибка переноса на терминал " + zipFilePath + " -> " + strTermDst);
             return false;
         end;
         return true;
@@ -482,4 +555,93 @@ class (TBaseXmlDoc) OpenDocForm(strFormPath_)
     /* Constructor */
     InitOk=Init2(strFormPath_);
 end;
+
+class (TBaseXmlDoc) TMsDocForm(strFormPath_)
+    const strNsSettings="xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:r='http://schemas.openxmlformats.org/officeDocument/2006/relationships' xmlns:m='http://schemas.openxmlformats.org/officeDocument/2006/math' xmlns:v='urn:schemas-microsoft-com:vml' xmlns:w10='urn:schemas-microsoft-com:office:word' xmlns:w='http://schemas.openxmlformats.org/wordprocessingml/2006/main' xmlns:sl='http://schemas.openxmlformats.org/schemaLibrary/2006/main'";
+    var domSettings;
+
+    macro Init2(paramInit)
+        
+        DebugBreak();
+
+        InitTBaseXmlDoc(paramInit);
+
+        if(not UnZipFile("word/document.xml","word\\settings.xml"))
+            return false;
+        end;
+        /* */
+
+        if (not LoadXml(DOMDoc, "word\\document.xml"))
+            return false;    
+        end;
+
+        DOMDoc.setProperty("SelectionLanguage",   "XPath");
+        DOMDoc.setProperty("SelectionNamespaces", "xmlns:ve='http://schemas.openxmlformats.org/markup-compatibility/2006' xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:r='http://schemas.openxmlformats.org/officeDocument/2006/relationships' xmlns:m='http://schemas.openxmlformats.org/officeDocument/2006/math' xmlns:v='urn:schemas-microsoft-com:vml' xmlns:wp='http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing' xmlns:w10='urn:schemas-microsoft-com:office:word' xmlns:w='http://schemas.openxmlformats.org/wordprocessingml/2006/main' xmlns:wne='http://schemas.microsoft.com/office/word/2006/wordml'");
+
+        //для M$Word нужен ещё один файл
+        domSettings = ActiveX("MSXML.DOMDocument");
+        domSettings.async = False;
+        if (not LoadXml(domSettings, "word\\settings.xml"))
+            return false;    
+        end;
+        domSettings.setProperty("SelectionLanguage",   "XPath");
+        domSettings.setProperty("SelectionNamespaces", strNsSettings);
+
+        return true;
+    end; /* macro Init */
+
+    macro SetField(strFieldName, v)
+        var strValueType:String;
+        var strXmlType:String;
+        var strXPath:String;
+        var domNodes, domNode;
+        var domNewNode;
+
+        if (not InitOk) return false; end;
+
+        strXPath="//w:docVar[@w:name='"+strFieldName+"']";
+        DebugPrint(strXPath);
+        domNodes=domSettings.documentElement.selectNodes(strXPath);
+        if (domNodes.length==0)
+            var domParent=domSettings.documentElement.selectNodes("/w:settings/w:docVars");
+            if (domParent.length==0)
+                domNewNode=domSettings.createNode(XML_NODE_ELEMENT, "w:docVars","http://schemas.openxmlformats.org/wordprocessingml/2006/main");
+                domParent=domSettings.documentElement.appendChild(domNewNode);
+            else
+                domParent=domParent.item(0);
+            end;
+            domNewNode=domSettings.createNode(XML_NODE_ELEMENT, "w:docVar","http://schemas.openxmlformats.org/wordprocessingml/2006/main");
+            //domNewNode=domSettings.createNode(XML_NODE_ELEMENT, "test","");
+            //domNewNode.setAttribute("w:name", strFieldName);
+            domNode=domParent.appendChild(domNewNode);
+            domNode.setAttribute("w:name", strFieldName);
+        //
+            //MsgBox("В шаблоне поле "+strFieldName+" не найдено ");
+            //return false;
+        else
+            domNode=domNodes.Item(0);
+        end;
+        domNode.setAttribute("w:val", v);
+    end; //macro SetField
+
+    macro Save()
+        //bSaveCalled=True;
+        //if (not InitOk) return false; end;
+
+        domDoc.Save(strWorkDir+"\\word\\document.xml");
+        domSettings.Save(strWorkDir+"\\word\\settings.xml");
+
+        DocSave();
+    end;
+
+    macro Destructor()
+        Save();
+    end;
+
+
+
+
+    /* Constructor */
+    InitOk=Init2(strFormPath_);
+end; //class TMsDocForm
 

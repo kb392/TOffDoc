@@ -1,5 +1,4 @@
 import "toffdoc.mac";
 
-
 var frmODT=OpenDocForm("mytemplate.odt");
 
