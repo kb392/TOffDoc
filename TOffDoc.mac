@@ -36,6 +36,7 @@ class TBaseXmlDoc(strTemplate_)
     var InitOk;                   /* Флаг успешной инициализации                   */         
     var strReportName:String;     /* Имя файла отчета, если не заполнится, UID     */
     var aZipFiles=TArray();       /* Массив имён файлов для распаковки/запаковки   */
+    var AutoOpen:Bool=true;       /* Открывать файл после формирования             */
 
     macro DebugPrint(s)
         if (Verbose)
@@ -43,11 +44,13 @@ class TBaseXmlDoc(strTemplate_)
         end;
     end; /* macro DebugPrint */
 
+    
     macro GetDirUID
         return "odtxml"+GetApplicationKey();
         //return "odtxml"+String(date())+String(Time());
     end; /* macro GetDirUID */
 
+    
     macro LoadXml(xmlDoc, strFile)
         if (not xmlDoc.Load(strWorkDir+"\\"+strFile))
             PrintLn("Error load XML: "+strWorkDir+"\\"+strFile);
@@ -67,6 +70,7 @@ class TBaseXmlDoc(strTemplate_)
         end;
         return false;
     end; /* macro InArray */
+
 
     macro UnZipFile()
         var strFileName;
@@ -136,6 +140,11 @@ class TBaseXmlDoc(strTemplate_)
     end; //macro GetXPath
     */
 
+    macro SetReportName(s)
+        strReportName=s;
+    end;
+
+    
     macro DocSave(strTermDst:@String)
         var iZipErr;
 
@@ -161,7 +170,7 @@ class TBaseXmlDoc(strTemplate_)
         end;
 
         /* Копирование на терминал */
-        strTermDst=strBaseName+strFormExt;
+        strTermDst=strReportName+strFormExt;
         if (CopyFile(zipFilePath, "$"+strTermDst))
             if (bRemoveOnServer)
                RemoveFile(zipFilePath);
@@ -280,10 +289,19 @@ class (TBaseXmlDoc) OpenDocForm(strFormPath_)
 
         if   ("string"==strValueType)
             strXmlType="string-value";
+            if ((ValType(v)==V_UNDEF) or (v==NullVal))
+                v="";
+            end;
         elif ( "float"==strValueType)
             strXmlType="value";
+            if ((ValType(v)==V_UNDEF) or (v==NullVal))
+                v="0";
+            end;
         else
             strXmlType="value";
+            if ((ValType(v)==V_UNDEF) or (v==NullVal))
+                v="";
+            end;
         end;
         strXmlType="office:"+strXmlType;
 
@@ -330,10 +348,10 @@ class (TBaseXmlDoc) OpenDocForm(strFormPath_)
 
         DOMDoc.Save(strWorkDir+"\\content.xml");
 
-        DocSave();
+        //DocSave();
 
         var strTermDst:String;
-        if (DocSave(@strTermDst))
+        if (DocSave(@strTermDst) and (AutoOpen or AutoPrint))
             var strArgs:String;
             strArgs=strTermDst;
             if (AutoPrint)
@@ -657,8 +675,6 @@ class (TBaseXmlDoc) TMsDocForm(strFormPath_)
     macro Destructor()
         Save();
     end;
-
-
 
 
     /* Constructor */
