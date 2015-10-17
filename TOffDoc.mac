@@ -577,6 +577,7 @@ end;
 class (TBaseXmlDoc) TMsDocForm(strFormPath_)
     const strNsSettings="xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:r='http://schemas.openxmlformats.org/officeDocument/2006/relationships' xmlns:m='http://schemas.openxmlformats.org/officeDocument/2006/math' xmlns:v='urn:schemas-microsoft-com:vml' xmlns:w10='urn:schemas-microsoft-com:office:word' xmlns:w='http://schemas.openxmlformats.org/wordprocessingml/2006/main' xmlns:sl='http://schemas.openxmlformats.org/schemaLibrary/2006/main'";
     var domSettings;
+    var modeFieldChange=2; //how to change field in document.xml
 
     macro Init2(paramInit)
         
@@ -614,6 +615,16 @@ class (TBaseXmlDoc) TMsDocForm(strFormPath_)
         var domNodes, domNode;
         var domNewNode;
         var i,j;
+        var iSubFld;
+
+        //Возвращает атрибут для сложного поля или пусто
+        macro GetFieldPart(domNode)  
+            var domNodes=domNode.GetElementsByTagName("w:fldChar");
+            if (domNodes.length>0)
+                return  domNodes.item(0).GetAttribute("w:fldCharType");
+            end;
+            return "";
+        end;
 
         if (not InitOk) return false; end;
 
@@ -643,22 +654,62 @@ class (TBaseXmlDoc) TMsDocForm(strFormPath_)
         domNode.setAttribute("w:val", v);
 
         DebugBreak();
-        // 2. Установка значения поля в Document
-        // Если ничего не делать с документом, то при открытии поля будут "старые" и только после Cltr-A F9 они обновятся
-        strXPath="//w:r[starts-with(normalize-space(w:instrText),'DOCVARIABLE "+strFieldName+" ' ) or normalize-space(w:instrText)='DOCVARIABLE "+strFieldName+"']";
-        DebugPrint(strXPath);
 
-        //пока выбираем упрощённый вариант, инвалидиуем поля. в этом случае ворд при открытии будет спрашивать обновить? скажем ему да и поля обновятся
-        //в будущем надо переписать на замену куска DOM см. http://officeopenxml.com/WPfields.php
-        var domNodesBegin;
-        domNodes=domDoc.documentElement.selectNodes(strXPath);
-        for (i, 0, domNodes.length-1, 1)
-            strXPath="preceding-sibling::w:r/w:fldChar[@w:fldCharType='begin' and last()]";
-            domNodesBegin=domNodes.item(i).selectNodes(strXPath);
-            for (j, 0, domNodesBegin.length-1, 1)
-                domNodesBegin.item(j).setAttribute("w:dirty","true");
-            end; //for j
-        end; //for i
+        if  (modeFieldChange>0)
+            // 2. Установка значения поля в Document
+            // Если ничего не делать с документом, то при открытии поля будут "старые" и только после Cltr-A F9 они обновятся
+            strXPath="//w:r[starts-with(normalize-space(w:instrText),'DOCVARIABLE "+strFieldName+" ' ) or normalize-space(w:instrText)='DOCVARIABLE "+strFieldName+"']";
+            DebugPrint(strXPath);
+            //пока выбираем упрощённый вариант, инвалидиуем поля. в этом случае ворд при открытии будет спрашивать обновить? скажем ему да и поля обновятся
+            //в будущем надо переписать на замену куска DOM см. http://officeopenxml.com/WPfields.php
+            var domNodesBegin;
+            var domNodesSeparate;
+            domNodes=domDoc.documentElement.selectNodes(strXPath);
+            for (i, 0, domNodes.length-1, 1)
+                iSubFld=0;
+                if(1==modeFieldChange)
+                    strXPath="preceding-sibling::w:r/w:fldChar[@w:fldCharType='begin' and last()]";  //последний 
+                    domNodesBegin=domNodes.item(i).selectNodes(strXPath);
+                    for (j, 0, domNodesBegin.length-1, 1)
+                        domNodesBegin.item(j).setAttribute("w:dirty","true");
+                    end; //for j
+                elif(2==modeFieldChange) 
+                    //strXPath="following-sibling::";
+                    strXPath="following-sibling::w:r[1][w:fldChar/@w:fldCharType='separate']";   //првый снизу separate от найденного поля
+                    domNodesSeparate=domNodes.item(i).selectNodes(strXPath);
+                    if (domNodesSeparate.length>0)
+                        strXPath="following-sibling::*";
+                        domNodesBegin=domNodesSeparate.item(0).selectNodes(strXPath);
+                        for (j, 0, domNodesBegin.length-1, 1)
+                            var sFieldPart =GetFieldPart(domNodesBegin.item(j));
+                            if  (sFieldPart=="end")
+                                if (iSubFld==0)
+                                    //вставляем и закругляеся
+                                    domNewNode=domSettings.createNode(XML_NODE_ELEMENT, "w:r","http://schemas.openxmlformats.org/wordprocessingml/2006/main");
+                                    domNode=domNodesBegin.item(j).parentNode.insertBefore(domNewNode,domNodesBegin.item(j));
+                                    //<w:t xml:space="preserve">Ivan </w:t>
+                                    domNewNode=domSettings.createNode(XML_NODE_ELEMENT, "w:t","http://schemas.openxmlformats.org/wordprocessingml/2006/main");
+                                    domNode=domNode.appendChild(domNewNode);
+                                    domNode.SetAttribute("xml:space","preserve");
+                                    domNode.text=v;
+
+                                    break;
+                                else
+                                    iSubFld=iSubFld-1;
+                                end;
+                            elif(sFieldPart=="begin")
+                                iSubFld=iSubFld+1;
+                            end;
+                            //чистим
+                            domNodesBegin.item(j).parentNode.removeChild(domNodesBegin.item(j));
+
+                        end; //for j 
+                    else
+                        DebugPrint("separate not found");
+                    end;
+                end;
+            end; //for i
+        end;
 
     end; //macro SetField
 
