@@ -7,6 +7,32 @@ import rsexts;
 import "info-zip.d32";
 import "constxml.mac";
 
+/* проверка терминального макроса */                                                            
+private macro CheckTermTools
+    const sMacroName="termtools.mac";
+    var src_dt:date, src_tm:time, src_size:integer;
+    var dst_dt:date=Date(0,0,0), dst_tm:time=Time(0,0,0), dst_size:integer=0;
+
+    var strDstPath="$MAC\\"+sMacroName;
+
+    var ErrCode;
+    var strTermMacTemplatePath="..\\MAC\\USER_MAC\\.TERMINAL";
+    GetRegistryValue("USER_MAC\\ДИРЕКТОРИИ\\МАКРОСЫ ДЛЯ ТЕРМИНАЛА",V_STRING, strTermMacTemplatePath, ErrCode);
+
+    var strSrcPath=strTermMacTemplatePath+"\\" + sMacroName;
+
+    if (GetFileInfo(strSrcPath, @src_dt, @src_tm, @src_size))
+        GetFileInfo(strDstPath, @dst_dt, @dst_tm, @dst_size);
+        if ((src_dt!=dst_dt) and (src_tm!=dst_tm) or (src_size!=dst_size))
+            if (not CopyFile (strSrcPath, strDstPath))
+                MsgBox("Ошибка копирования макроса на терминал");
+            end;
+        end;
+    else
+        MsgBox("Не найден эталон терминального макроса "+strSrcPath);
+    end;
+end;//macro CheckTermTools 
+
 
 private macro XML_EscapeSting(s)
     if (ValType(s)==V_UNDEF) return ""; end;
@@ -20,7 +46,7 @@ private macro XML_EscapeSting(s)
     return String(s);
 end; /* macro XML_EscapeSting */
 
-
+/* базовый класс */
 class TBaseXmlDoc(strTemplate_)
     var DOMDOC;
     var strFormPath=strTemplate_;
@@ -198,8 +224,14 @@ class TBaseXmlDoc(strTemplate_)
             sDstPath=strTermDst;
         else
         //считаем, что путь не передан. копируем на терминал
+            //при копировании файлов на терминал они попадают в папку 
+            CheckTermTools();
+            strTermDst=CallRemoteRsl ("termtools.mac", "GetIniString", "UPDIR",".\\RSEXTT.INI");
+            if ((strTermDst!="") and (SubStr(strTermDst,StrLen(strTermDst))!="\\"))
+                strTermDst=strTermDst+"\\";
+            end;
             /* Копирование на терминал */
-            strTermDst=strReportName+strFormExt;
+            strTermDst=strTermDst+strReportName+strFormExt;
             sDstPath="$"+strTermDst;
         end;
 
@@ -405,9 +437,12 @@ class (TBaseXmlDoc) TOpenDocForm(strFormPath_)
                 var strArgs:String;
                 strArgs=strTermDst;
                 if (AutoPrint)
+                //печать
                     if ((ValType(Printer)!=V_UNDEF) and (Printer!=""))
+                        //на указанный принтер
                         strArgs="-pt " +Printer+ " "+ strArgs;
                     else
+                        //на принтер по умолчанию
                         strArgs="-p" + strArgs;
                     end;
                 end;

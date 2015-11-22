@@ -1,0 +1,89 @@
+import ClnInter, BankInter, CtgInter;
+import globals;
+import TOffDoc;
+
+var dateReport={curdate};
+var fAccount =TBFile("account.dbt", "R",4,null,"bank.def");
+var fPT= TBFile("partyown.dbt", "R", 1,null,"bank.def");
+var okPT:Bool;
+
+
+var rep=TOpenDocForm("счета клиентов.odt");
+
+rep.Section(); //В отчёте будет использоваться механизм разделов
+               //Имя раздела не указано, значит будет использоваться "Раздел1"
+rep.SetSectionFields("Клиент", "ИНН", "КПП", "Сумма_по_счёту");  //Перечисляются поля, которые относятся к разделу
+               //Поля Банк и Исполнитель сюда не входят, значит это "глобальные поля"
+
+rep.SetField("Исполнитель",GetFioOper({oper}));
+rep.SetField("Банк",       {name_bank});
+/*  */
+var flagNoAccount=true;
+var sFullName, sShortName, sAddName;
+var cntCln=0, cntAcc=0;
+var sumAcc=$0;
+
+macro OpenCloseAcc(CharOpenClose)
+    var aRow=TArray();
+
+    fAccount.rec.Open_Close=CharOpenClose;
+    fAccount.rec.Client=fPT.rec.ClientId;
+    fAccount.rec.Sort="";
+    var getOk=fAccount.GetGE();
+    while(getOk and (fAccount.rec.Open_Close==CharOpenClose) and (fAccount.rec.Client==fPT.rec.ClientId))
+            if ((fAccount.rec.Close_Date==Date(0,0,0)) or (fAccount.rec.Close_Date<=dateReport))
+                if (flagNoAccount)
+                    rep.SectionAdd(); //секцию добавляем только когда есть счета, иначе будут пустые секции для клиентов без счетов
+                    flagNoAccount=false;
+                    rep.SetField("Клиент",sShortName);
+                    rep.SetField("ИНН",GetClientINN(fPT.rec.ClientId));
+                    rep.SetField("КПП",GetClientKPP(fPT.rec.ClientId));
+
+                    rep.iTableFooterRows=1;  /* У таблицы есть подвал                     */
+                    rep.Table();             /* Название таблицы, по умолчанию "Таблица1" */
+                end;
+                
+                aRow[0]=fAccount.rec.Account;
+                aRow[1]=String(fAccount.rec.Final_Date:f);
+                aRow[2]=fAccount.rec.R0;
+                rep.WriteRow(aRow);
+                cntAcc=cntAcc+1;
+                sumAcc=sumAcc+fAccount.rec.R0;
+            end;
+        getOk=fAccount.Next();
+    end;
+end;
+
+
+
+
+
+        fPT.rec.PartyKind=PTK_CLIENT;
+        fPT.rec.Sort="";
+        okPT=fPT.GetGE();
+
+        /* перебор всех клиентов */
+        while(okPT and (fPT.rec.PartyKind==PTK_CLIENT))
+            /* отбираем ЮЛ */
+            if( PTLEGF_INST==GetClientLegalForm(fPT.rec.ClientId))
+                flagNoAccount=true;
+                sumAcc=$0;
+                GetClientNames(fPT.rec.ClientId, sFullName, sShortName, sAddName);
+                OpenCloseAcc("");
+                OpenCloseAcc("З");
+                if (not flagNoAccount);
+                    rep.SetField("Сумма_по_счёту", sumAcc);
+                end;
+                cntCln=cntCln+1;
+                message(cntCln);
+            end;
+            okPT=fPT.next();
+
+            //для примера ограничиваем время выполнения макроса
+            if(cntCln>200)
+                okPT=false;
+            end;
+        end; //while
+
+rep.SetField("Всего_клиентов", cntCln);
+rep.SetField("Всего_счетов", cntAcc);

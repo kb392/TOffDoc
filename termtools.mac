@@ -1,0 +1,23 @@
+/* v 201508101657 */
+
+macro TermGetEnv(s)
+    return GetEnv(s);
+end;
+
+macro GetIniString(sKey,sFile)
+    var iParamPos;
+    file f() txt;
+    if (open(f,sFile))
+        while(next(f))
+            if (SubStr(f.str,1,1)!=";")
+                iParamPos=Index(f.str,"=");
+                if ((iParamPos>0) and (StrUpr(Trim(SubStr(f.str,1,iParamPos-1)))==StrUpr(sKey)))
+                    return Trim(SubStr(f.str,iParamPos+1));
+                end;
+            end;
+        end;
+        return "";
+    else
+        return "";
+    end;
+end;
