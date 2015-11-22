@@ -144,6 +144,24 @@ class TBaseXmlDoc(strTemplate_)
         strReportName=s;
     end;
 
+    macro ConvertOnServer(sNewFormat, sPath, sDestPath)
+        var sParams;
+        var sEXE="..\\Tools\\LibreOfficePortable\\LibreOfficeWriterPortable.exe";
+        //var sEXE="..\\Tools\\LibreOfficePortable\\App\\LibreOffice\\program\\sWriter.exe";
+
+        if (ValType(sDestPath)==V_UNDEF)
+            sDestPath=SplitFile(sPath);
+            If  (substr(sDestPath, strlen(sDestPath))== "\\")
+                sDestPath=SubStr(sDestPath,1,StrLen(sDestPath)-1);
+            End;
+            
+        end;
+
+        sParams="--headless --convert-to "+sNewFormat + "  --outdir \""+sDestPath+"\" \""+sPath+"\"";
+        PrintLn(sEXE+" "+sParams);
+        //Run(sEXE, sParams, ">", null);
+        StartProg(sEXE, sParams, false);
+    end;
     
     macro DocSave(strTermDst:@String)
         var iZipErr;
@@ -169,17 +187,31 @@ class TBaseXmlDoc(strTemplate_)
             end;
         end;
 
-        /* Копирование на терминал */
-        strTermDst=strReportName+strFormExt;
-        if (CopyFile(zipFilePath, "$"+strTermDst))
+
+        var sDstPath; //2015.11.13
+        if ((ValType(strTermDst)==V_STRING) and (strTermDst!=""))
+        //считаем, что передан путь и будем сохранять в него
+            If  (substr(strTermDst, strlen(strTermDst))!= "\\")
+                strTermDst=strTermDst+ "\\";
+            End;
+            strTermDst=strTermDst+strReportName+strFormExt;
+            sDstPath=strTermDst;
+        else
+        //считаем, что путь не передан. копируем на терминал
+            /* Копирование на терминал */
+            strTermDst=strReportName+strFormExt;
+            sDstPath="$"+strTermDst;
+        end;
+
+        if (CopyFile(zipFilePath, sDstPath))
             if (bRemoveOnServer)
                RemoveFile(zipFilePath);
                RemoveDir(strWorkDir);
             end;
-            DebugPrint("Файл перемещен на терминал");
+            //DebugPrint("Файл перемещен на терминал");
             return true;
         else
-            PrintLn("Ошибка переноса на терминал " + zipFilePath + " -> " + strTermDst);
+            PrintLn("Ошибка переноса " + zipFilePath + " -> " + sDstPath);
         end;
         return false;
 
@@ -208,7 +240,7 @@ class TBaseXmlDoc(strTemplate_)
 end; //class TBaseXmlDoc
 
 
-class (TBaseXmlDoc) OpenDocForm(strFormPath_)
+class (TBaseXmlDoc) TOpenDocForm(strFormPath_)
     //var DOMDOC;
     //var strFolder=strFormPath;
     //var strBaseName:String;       /* Имя отчета, длинная бестолковая фигня         */
@@ -307,6 +339,16 @@ class (TBaseXmlDoc) OpenDocForm(strFormPath_)
 
         domNode.setAttribute(strXmlType, v);
 
+        //20151116 Если не менять по всему тексту, то LibreOffice открывает нормально, 
+        //но M$Word не обновляет, поэтому находим все вхождения поля и меняем
+        strXPath="//text:user-field-get[@text:name='"+strFieldName+"']";
+        DebugPrint(strXPath);
+        domNodes=DOMDoc.documentElement.selectNodes(strXPath);
+        var i;
+        for (i, 0, domNodes.length-1, 1)
+            domNodes.item(i).text=v;
+        end;
+
         onerror(er)
             msgbox(er.Message + " (строка " + er.line + ")|"+"Ошибка установки значения ["+String(v)+"]| поля ["+strFieldName+"]");
             return false;
@@ -342,31 +384,42 @@ class (TBaseXmlDoc) OpenDocForm(strFormPath_)
 
 
 
-    macro Save()
+    macro Save(sDestFolder)
         bSaveCalled=True;
         if (not InitOk) return false; end;
 
         DOMDoc.Save(strWorkDir+"\\content.xml");
 
-        //DocSave();
-
         var strTermDst:String;
-        if (DocSave(@strTermDst) and (AutoOpen or AutoPrint))
-            var strArgs:String;
-            strArgs=strTermDst;
-            if (AutoPrint)
-                if ((ValType(Printer)!=V_UNDEF) and (Printer!=""))
-                    strArgs="-pt " +Printer+ " "+ strArgs;
-                else
-                    strArgs="-p" + strArgs;
-                end;
+
+        if ((ValType(sDestFolder)==V_STRING) and (sDestFolder!=""))
+        //режим введён для массового безинтерфейсного формирования файлов     
+            var sPath=sDestFolder;
+            if (DocSave(@sPath))
+                return sPath;
+            else
+                return "";
             end;
-            StartProg ("$"+"swriter", strArgs, true);
         else
-            return false;
+            if (DocSave(@strTermDst) and (AutoOpen or AutoPrint))
+                var strArgs:String;
+                strArgs=strTermDst;
+                if (AutoPrint)
+                    if ((ValType(Printer)!=V_UNDEF) and (Printer!=""))
+                        strArgs="-pt " +Printer+ " "+ strArgs;
+                    else
+                        strArgs="-p" + strArgs;
+                    end;
+                end;
+                StartProg ("$"+"swriter", strArgs, true);
+            else
+                return false;
+            end;
         end;
         return true;
     end;
+
+
 
     /* Инициализация таблицы для вывода */
     macro Table(sParamName)
@@ -578,6 +631,7 @@ class (TBaseXmlDoc) TMsDocForm(strFormPath_)
     const strNsSettings="xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:r='http://schemas.openxmlformats.org/officeDocument/2006/relationships' xmlns:m='http://schemas.openxmlformats.org/officeDocument/2006/math' xmlns:v='urn:schemas-microsoft-com:vml' xmlns:w10='urn:schemas-microsoft-com:office:word' xmlns:w='http://schemas.openxmlformats.org/wordprocessingml/2006/main' xmlns:sl='http://schemas.openxmlformats.org/schemaLibrary/2006/main'";
     var domSettings;
     var modeFieldChange=2; //how to change field in document.xml
+    var sMsNs="http://schemas.openxmlformats.org/wordprocessingml/2006/main";
 
     macro Init2(paramInit)
         
@@ -616,6 +670,8 @@ class (TBaseXmlDoc) TMsDocForm(strFormPath_)
         var domNewNode;
         var i,j;
         var iSubFld;
+        var nodeSeparate; //<w:r w:rsidR="004B59E8"><w:fldChar w:fldCharType="separate"/>
+        var nodeFildValue;
 
         //Возвращает атрибут для сложного поля или пусто
         macro GetFieldPart(domNode)  
@@ -635,12 +691,12 @@ class (TBaseXmlDoc) TMsDocForm(strFormPath_)
         if (domNodes.length==0)
             var domParent=domSettings.documentElement.selectNodes("/w:settings/w:docVars");
             if (domParent.length==0)
-                domNewNode=domSettings.createNode(XML_NODE_ELEMENT, "w:docVars","http://schemas.openxmlformats.org/wordprocessingml/2006/main");
+                domNewNode=domSettings.createNode(XML_NODE_ELEMENT, "w:docVars",sMsNs);
                 domParent=domSettings.documentElement.appendChild(domNewNode);
             else
                 domParent=domParent.item(0);
             end;
-            domNewNode=domSettings.createNode(XML_NODE_ELEMENT, "w:docVar","http://schemas.openxmlformats.org/wordprocessingml/2006/main");
+            domNewNode=domSettings.createNode(XML_NODE_ELEMENT, "w:docVar",sMsNs);
             //domNewNode=domSettings.createNode(XML_NODE_ELEMENT, "test","");
             //domNewNode.setAttribute("w:name", strFieldName);
             domNode=domParent.appendChild(domNewNode);
@@ -653,18 +709,17 @@ class (TBaseXmlDoc) TMsDocForm(strFormPath_)
         end;
         domNode.setAttribute("w:val", v);
 
-        DebugBreak();
-
         if  (modeFieldChange>0)
             // 2. Установка значения поля в Document
             // Если ничего не делать с документом, то при открытии поля будут "старые" и только после Cltr-A F9 они обновятся
             strXPath="//w:r[starts-with(normalize-space(w:instrText),'DOCVARIABLE "+strFieldName+" ' ) or normalize-space(w:instrText)='DOCVARIABLE "+strFieldName+"']";
-            DebugPrint(strXPath);
+            //DebugPrint(strXPath);
             //пока выбираем упрощённый вариант, инвалидиуем поля. в этом случае ворд при открытии будет спрашивать обновить? скажем ему да и поля обновятся
             //в будущем надо переписать на замену куска DOM см. http://officeopenxml.com/WPfields.php
             var domNodesBegin;
             var domNodesSeparate;
             domNodes=domDoc.documentElement.selectNodes(strXPath);
+            if (domNodes.length==0) DebugPrint("Can not find Field \""+strFieldName+"\", using xpath "+strXPath); end;
             for (i, 0, domNodes.length-1, 1)
                 iSubFld=0;
                 if(1==modeFieldChange)
@@ -684,11 +739,12 @@ class (TBaseXmlDoc) TMsDocForm(strFormPath_)
                             var sFieldPart =GetFieldPart(domNodesBegin.item(j));
                             if  (sFieldPart=="end")
                                 if (iSubFld==0)
+
                                     //вставляем и закругляеся
-                                    domNewNode=domSettings.createNode(XML_NODE_ELEMENT, "w:r","http://schemas.openxmlformats.org/wordprocessingml/2006/main");
+                                    domNewNode=domDoc.createNode(XML_NODE_ELEMENT, "w:r", sMsNs);
                                     domNode=domNodesBegin.item(j).parentNode.insertBefore(domNewNode,domNodesBegin.item(j));
                                     //<w:t xml:space="preserve">Ivan </w:t>
-                                    domNewNode=domSettings.createNode(XML_NODE_ELEMENT, "w:t","http://schemas.openxmlformats.org/wordprocessingml/2006/main");
+                                    domNewNode=domDoc.createNode(XML_NODE_ELEMENT, "w:t", sMsNs);
                                     domNode=domNode.appendChild(domNewNode);
                                     domNode.SetAttribute("xml:space","preserve");
                                     domNode.text=v;
@@ -705,7 +761,40 @@ class (TBaseXmlDoc) TMsDocForm(strFormPath_)
 
                         end; //for j 
                     else
-                        DebugPrint("separate not found");
+                        DebugPrint("separate not found. i="+i);
+                        /**/
+                                    //вставляем после найденного поля
+                                    //range и в него separate
+                                    domNewNode=domDoc.createNode(XML_NODE_ELEMENT, "w:r", sMsNs);
+                                    nodeSeparate=domNodes.item(i).parentNode.insertBefore(domNewNode,domNodes.item(i).nextSibling);
+
+                                    domNewNode=domDoc.createNode(XML_NODE_ELEMENT, "w:fldChar", sMsNs);
+                                    domNewNode.SetAttribute("w:fldCharType","separate");
+                                    nodeSeparate.appendChild(domNewNode);
+
+                                    //а после них range и в него значение переменной
+                                    domNewNode=domDoc.createNode(XML_NODE_ELEMENT, "w:r", sMsNs);
+                                    nodeFildValue=domNodes.item(i).parentNode.insertBefore(domNewNode,nodeSeparate.nextSibling);
+
+                                    //копируем стиль
+                                    domNode=domNodes.item(i).SelectSingleNode("w:rPr");
+                                    if ((ValType(domNode)!=V_UNDEF) and (domNode!=NullVal))
+                                        //PrintLn(GetTypeName(domNode));
+                                        domNewNode=domNode.cloneNode(true);
+                                        nodeFildValue.appendChild(domNewNode);
+                                    else
+                                        PrintLn("no style");
+                                    end;
+
+                                    domNewNode=domDoc.createNode(XML_NODE_ELEMENT, "w:t", sMsNs);
+                                    domNode=nodeFildValue.appendChild(domNewNode);
+                                    domNode.SetAttribute("xml:space","preserve");
+                                    domNode.text=v;
+
+
+                                    nodeSeparate=null;
+                                    nodeFildValue=null;
+                        /**/
                     end;
                 end;
             end; //for i
