@@ -8,15 +8,15 @@ var fPT= TBFile("partyown.dbt", "R", 1,null,"bank.def");
 var okPT:Bool;
 
 
-var rep=TOpenDocForm("╤Б╤З╨╡╤В╨░ ╨║╨╗╨╕╨╡╨╜╤В╨╛╨▓.odt");
+var rep=TOpenDocForm("счета клиентов.odt");
 
-rep.Section(); //╨Т ╨╛╤В╤З╤С╤В╨╡ ╨▒╤Г╨┤╨╡╤В ╨╕╤Б╨┐╨╛╨╗╤М╨╖╨╛╨▓╨░╤В╤М╤Б╤П ╨╝╨╡╤Е╨░╨╜╨╕╨╖╨╝ ╤А╨░╨╖╨┤╨╡╨╗╨╛╨▓
-               //╨Ш╨╝╤П ╤А╨░╨╖╨┤╨╡╨╗╨░ ╨╜╨╡ ╤Г╨║╨░╨╖╨░╨╜╨╛, ╨╖╨╜╨░╤З╨╕╤В ╨▒╤Г╨┤╨╡╤В ╨╕╤Б╨┐╨╛╨╗╤М╨╖╨╛╨▓╨░╤В╤М╤Б╤П "╨а╨░╨╖╨┤╨╡╨╗1"
-rep.SetSectionFields("╨Ъ╨╗╨╕╨╡╨╜╤В", "╨Ш╨Э╨Э", "╨Ъ╨Я╨Я", "╨б╤Г╨╝╨╝╨░_╨┐╨╛_╤Б╤З╤С╤В╤Г");  //╨Я╨╡╤А╨╡╤З╨╕╤Б╨╗╤П╤О╤В╤Б╤П ╨┐╨╛╨╗╤П, ╨║╨╛╤В╨╛╤А╤Л╨╡ ╨╛╤В╨╜╨╛╤Б╤П╤В╤Б╤П ╨║ ╤А╨░╨╖╨┤╨╡╨╗╤Г
-               //╨Я╨╛╨╗╤П ╨С╨░╨╜╨║ ╨╕ ╨Ш╤Б╨┐╨╛╨╗╨╜╨╕╤В╨╡╨╗╤М ╤Б╤О╨┤╨░ ╨╜╨╡ ╨▓╤Е╨╛╨┤╤П╤В, ╨╖╨╜╨░╤З╨╕╤В ╤Н╤В╨╛ "╨│╨╗╨╛╨▒╨░╨╗╤М╨╜╤Л╨╡ ╨┐╨╛╨╗╤П"
+rep.Section(); //В отчёте будет использоваться механизм разделов
+               //Имя раздела не указано, значит будет использоваться "Раздел1"
+rep.SetSectionFields("Клиент", "ИНН", "КПП", "Сумма_по_счёту");  //Перечисляются поля, которые относятся к разделу
+               //Поля Банк и Исполнитель сюда не входят, значит это "глобальные поля"
 
-rep.SetField("╨Ш╤Б╨┐╨╛╨╗╨╜╨╕╤В╨╡╨╗╤М",GetFioOper({oper}));
-rep.SetField("╨С╨░╨╜╨║",       {name_bank});
+rep.SetField("Исполнитель",GetFioOper({oper}));
+rep.SetField("Банк",       {name_bank});
 /*  */
 var flagNoAccount=true;
 var sFullName, sShortName, sAddName;
@@ -33,14 +33,14 @@ macro OpenCloseAcc(CharOpenClose)
     while(getOk and (fAccount.rec.Open_Close==CharOpenClose) and (fAccount.rec.Client==fPT.rec.ClientId))
             if ((fAccount.rec.Close_Date==Date(0,0,0)) or (fAccount.rec.Close_Date<=dateReport))
                 if (flagNoAccount)
-                    rep.SectionAdd(); //╤Б╨╡╨║╤Ж╨╕╤О ╨┤╨╛╨▒╨░╨▓╨╗╤П╨╡╨╝ ╤В╨╛╨╗╤М╨║╨╛ ╨║╨╛╨│╨┤╨░ ╨╡╤Б╤В╤М ╤Б╤З╨╡╤В╨░, ╨╕╨╜╨░╤З╨╡ ╨▒╤Г╨┤╤Г╤В ╨┐╤Г╤Б╤В╤Л╨╡ ╤Б╨╡╨║╤Ж╨╕╨╕ ╨┤╨╗╤П ╨║╨╗╨╕╨╡╨╜╤В╨╛╨▓ ╨▒╨╡╨╖ ╤Б╤З╨╡╤В╨╛╨▓
+                    rep.SectionAdd(); //секцию добавляем только когда есть счета, иначе будут пустые секции для клиентов без счетов
                     flagNoAccount=false;
-                    rep.SetField("╨Ъ╨╗╨╕╨╡╨╜╤В",sShortName);
-                    rep.SetField("╨Ш╨Э╨Э",GetClientINN(fPT.rec.ClientId));
-                    rep.SetField("╨Ъ╨Я╨Я",GetClientKPP(fPT.rec.ClientId));
+                    rep.SetField("Клиент",sShortName);
+                    rep.SetField("ИНН",GetClientINN(fPT.rec.ClientId));
+                    rep.SetField("КПП",GetClientKPP(fPT.rec.ClientId));
 
-                    rep.iTableFooterRows=1;  /* ╨г ╤В╨░╨▒╨╗╨╕╤Ж╤Л ╨╡╤Б╤В╤М ╨┐╨╛╨┤╨▓╨░╨╗                     */
-                    rep.Table();             /* ╨Э╨░╨╖╨▓╨░╨╜╨╕╨╡ ╤В╨░╨▒╨╗╨╕╤Ж╤Л, ╨┐╨╛ ╤Г╨╝╨╛╨╗╤З╨░╨╜╨╕╤О "╨в╨░╨▒╨╗╨╕╤Ж╨░1" */
+                    rep.iTableFooterRows=1;  /* У таблицы есть подвал                     */
+                    rep.Table();             /* Название таблицы, по умолчанию "Таблица1" */
                 end;
                 
                 aRow[0]=fAccount.rec.Account;
@@ -62,28 +62,28 @@ end;
         fPT.rec.Sort="";
         okPT=fPT.GetGE();
 
-        /* ╨┐╨╡╤А╨╡╨▒╨╛╤А ╨▓╤Б╨╡╤Е ╨║╨╗╨╕╨╡╨╜╤В╨╛╨▓ */
+        /* перебор всех клиентов */
         while(okPT and (fPT.rec.PartyKind==PTK_CLIENT))
-            /* ╨╛╤В╨▒╨╕╤А╨░╨╡╨╝ ╨о╨Ы */
+            /* отбираем ЮЛ */
             if( PTLEGF_INST==GetClientLegalForm(fPT.rec.ClientId))
                 flagNoAccount=true;
                 sumAcc=$0;
                 GetClientNames(fPT.rec.ClientId, sFullName, sShortName, sAddName);
                 OpenCloseAcc("");
-                OpenCloseAcc("╨Ч");
+                OpenCloseAcc("З");
                 if (not flagNoAccount);
-                    rep.SetField("╨б╤Г╨╝╨╝╨░_╨┐╨╛_╤Б╤З╤С╤В╤Г", sumAcc);
+                    rep.SetField("Сумма_по_счёту", sumAcc);
                 end;
                 cntCln=cntCln+1;
                 message(cntCln);
             end;
             okPT=fPT.next();
 
-            //╨┤╨╗╤П ╨┐╤А╨╕╨╝╨╡╤А╨░ ╨╛╨│╤А╨░╨╜╨╕╤З╨╕╨▓╨░╨╡╨╝ ╨▓╤А╨╡╨╝╤П ╨▓╤Л╨┐╨╛╨╗╨╜╨╡╨╜╨╕╤П ╨╝╨░╨║╤А╨╛╤Б╨░
+            //для примера ограничиваем время выполнения макроса
             if(cntCln>200)
                 okPT=false;
             end;
         end; //while
 
-rep.SetField("╨Т╤Б╨╡╨│╨╛_╨║╨╗╨╕╨╡╨╜╤В╨╛╨▓", cntCln);
-rep.SetField("╨Т╤Б╨╡╨│╨╛_╤Б╤З╨╡╤В╨╛╨▓", cntAcc);
+rep.SetField("Всего_клиентов", cntCln);
+rep.SetField("Всего_счетов", cntAcc);

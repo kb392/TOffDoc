@@ -4,6 +4,6 @@ import "toffdoc.mac";
 //var frmODT=OpenDocForm("mytemplate.odt");
 var frmODT=TMSDocForm("test2.docx");
 //frmODT.SetField("Fld3","fld number 3 testing");
-frmODT.SetField("Fld1","–ì–ª–µ–± –ü—Ä–æ—Å–∫—É—Ä–∏–Ω");
+frmODT.SetField("Fld1","É´•° è‡Æ·™„‡®≠");
 
 
