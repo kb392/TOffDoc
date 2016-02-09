@@ -708,7 +708,7 @@ class (TBaseXmlDoc) TMsDocForm(strFormPath_)
         var nodeSeparate; //<w:r w:rsidR="004B59E8"><w:fldChar w:fldCharType="separate"/>
         var nodeFildValue;
 
-        //Возвращает атрибут для сложного поля или пусто
+        //Возвращает атрибут для сложного поля или пуст
         macro GetFieldPart(domNode)  
             var domNodes=domNode.GetElementsByTagName("w:fldChar");
             if (domNodes.length>0)
