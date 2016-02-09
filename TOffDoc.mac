@@ -1,5 +1,5 @@
 /* toffdocxml.mac                                           */
-/* –ë–∏–±–ª–æ—Ç–µ–∫–∞ —Å–æ–∑–¥–∞–Ω–∏—è –æ—Ñ–∏—Å–Ω—ã—Ö –¥–æ–∫—É–º–µ–Ω—Ç–æ–≤ –Ω–∞ –æ—Å–Ω–æ–≤–µ —à–∞–±–ª–æ–Ω–æ–≤ */
+/* Å®°´Æ‚•™† ·Æß§†≠®Ô Æ‰®·≠ÎÂ §Æ™„¨•≠‚Æ¢ ≠† Æ·≠Æ¢• Ë†°´Æ≠Æ¢ */
 Import rslx;
 import globals;
 import rcw;
@@ -7,7 +7,7 @@ import rsexts;
 import "info-zip.d32";
 import "constxml.mac";
 
-/* –ø—Ä–æ–≤–µ—Ä–∫–∞ —Ç–µ—Ä–º–∏–Ω–∞–ª—å–Ω–æ–≥–æ –º–∞–∫—Ä–æ—Å–∞ */                                                            
+/* Ø‡Æ¢•‡™† ‚•‡¨®≠†´Ï≠Æ£Æ ¨†™‡Æ·† */                                                            
 private macro CheckTermTools
     const sMacroName="termtools.mac";
     var src_dt:date, src_tm:time, src_size:integer;
@@ -17,7 +17,7 @@ private macro CheckTermTools
 
     var ErrCode;
     var strTermMacTemplatePath="..\\MAC\\USER_MAC\\.TERMINAL";
-    GetRegistryValue("USER_MAC\\–î–ò–†–ï–ö–¢–û–†–ò–ò\\–ú–ê–ö–†–û–°–´ –î–õ–Ø –¢–ï–†–ú–ò–ù–ê–õ–ê",V_STRING, strTermMacTemplatePath, ErrCode);
+    GetRegistryValue("USER_MAC\\ÑàêÖäíéêàà\\åÄäêéëõ Ñãü íÖêåàçÄãÄ",V_STRING, strTermMacTemplatePath, ErrCode);
 
     var strSrcPath=strTermMacTemplatePath+"\\" + sMacroName;
 
@@ -25,11 +25,11 @@ private macro CheckTermTools
         GetFileInfo(strDstPath, @dst_dt, @dst_tm, @dst_size);
         if ((src_dt!=dst_dt) and (src_tm!=dst_tm) or (src_size!=dst_size))
             if (not CopyFile (strSrcPath, strDstPath))
-                MsgBox("–û—à–∏–±–∫–∞ –∫–æ–ø–∏—Ä–æ–≤–∞–Ω–∏—è –º–∞–∫—Ä–æ—Å–∞ –Ω–∞ —Ç–µ—Ä–º–∏–Ω–∞–ª");
+                MsgBox("éË®°™† ™ÆØ®‡Æ¢†≠®Ô ¨†™‡Æ·† ≠† ‚•‡¨®≠†´");
             end;
         end;
     else
-        MsgBox("–ù–µ –Ω–∞–π–¥–µ–Ω —ç—Ç–∞–ª–æ–Ω —Ç–µ—Ä–º–∏–Ω–∞–ª—å–Ω–æ–≥–æ –º–∞–∫—Ä–æ—Å–∞ "+strSrcPath);
+        MsgBox("ç• ≠†©§•≠ Ì‚†´Æ≠ ‚•‡¨®≠†´Ï≠Æ£Æ ¨†™‡Æ·† "+strSrcPath);
     end;
 end;//macro CheckTermTools 
 
@@ -46,7 +46,7 @@ private macro XML_EscapeSting(s)
     return String(s);
 end; /* macro XML_EscapeSting */
 
-/* –±–∞–∑–æ–≤—ã–π –∫–ª–∞—Å—Å */
+/* °†ßÆ¢Î© ™´†·· */
 class TBaseXmlDoc(strTemplate_)
     var DOMDOC;
     var strFormPath=strTemplate_;
@@ -57,12 +57,13 @@ class TBaseXmlDoc(strTemplate_)
     var strFormName:String;
     var strFormExt:String;
     var Verbose=true;          //!!!
-    var bRemoveOnServer=false; //!!!    /* –£–¥–∞–ª—è—Ç—å –ø—Ä–æ–º–µ–∂—É—Ç–æ—á–Ω—ã–π —Ñ–∞–π–ª –Ω–∞ —Å–µ—Ä–≤–µ—Ä–µ         */
-    var strTemplate;              /* –ü—É—Ç—å –∫ —Ñ–∞–π–ª—É —à–∞–±–ª–æ–Ω–∞                          */
-    var InitOk;                   /* –§–ª–∞–≥ —É—Å–ø–µ—à–Ω–æ–π –∏–Ω–∏—Ü–∏–∞–ª–∏–∑–∞—Ü–∏–∏                   */         
-    var strReportName:String;     /* –ò–º—è —Ñ–∞–π–ª–∞ –æ—Ç—á–µ—Ç–∞, –µ—Å–ª–∏ –Ω–µ –∑–∞–ø–æ–ª–Ω–∏—Ç—Å—è, UID     */
-    var aZipFiles=TArray();       /* –ú–∞—Å—Å–∏–≤ –∏–º—ë–Ω —Ñ–∞–π–ª–æ–≤ –¥–ª—è —Ä–∞—Å–ø–∞–∫–æ–≤–∫–∏/–∑–∞–ø–∞–∫–æ–≤–∫–∏   */
-    var AutoOpen:Bool=true;       /* –û—Ç–∫—Ä—ã–≤–∞—Ç—å —Ñ–∞–π–ª –ø–æ—Å–ª–µ —Ñ–æ—Ä–º–∏—Ä–æ–≤–∞–Ω–∏—è             */
+    var bRemoveOnServer=false; //!!!    /* ì§†´Ô‚Ï Ø‡Æ¨•¶„‚ÆÁ≠Î© ‰†©´ ≠† ·•‡¢•‡•         */
+    var strTemplate;              /* è„‚Ï ™ ‰†©´„ Ë†°´Æ≠†                          */
+    var InitOk;                   /* î´†£ „·Ø•Ë≠Æ© ®≠®Ê®†´®ß†Ê®®                   */         
+    var strReportName:String;     /* à¨Ô ‰†©´† Æ‚Á•‚†, •·´® ≠• ß†ØÆ´≠®‚·Ô, UID     */
+    var aZipFiles=TArray();       /* å†··®¢ ®¨Ò≠ ‰†©´Æ¢ §´Ô ‡†·Ø†™Æ¢™®/ß†Ø†™Æ¢™®   */
+    var AutoOpen:Bool=true;       /* é‚™‡Î¢†‚Ï ‰†©´ ØÆ·´• ‰Æ‡¨®‡Æ¢†≠®Ô             */
+    var AutoPrint=false;          /* î´†£ †¢‚Æ¨†‚®Á•·™Æ© Ø•Á†‚® ≠† def Ø‡®≠‚•‡     */
 
     macro DebugPrint(s)
         if (Verbose)
@@ -113,12 +114,12 @@ class TBaseXmlDoc(strTemplate_)
         var i;
         for (i,1,Parmcount()-1,1)
             GetParm(i, strFileName);
-            aZipFiles[aZipFiles.Size]=strFileName; //–∑–∞–ø–æ–º–∏–Ω–∞–µ–º –∏–º–µ–Ω–∞ —Ä–∞—Å–ø–∞–∫–æ–≤–∞–Ω–Ω—ã—Ö —Ñ–∞–π–ª–æ–≤ –¥–ª—è –ø–æ—Å–ª–µ–¥—É—é—â–µ–π –∑–∞–ø–∞–∫–æ–≤–∫–∏
+            aZipFiles[aZipFiles.Size]=strFileName; //ß†ØÆ¨®≠†•¨ ®¨•≠† ‡†·Ø†™Æ¢†≠≠ÎÂ ‰†©´Æ¢ §´Ô ØÆ·´•§„ÓÈ•© ß†Ø†™Æ¢™®
 
             strFileName=StrSubst(strFileName,"\\","/"); // in zip folder/folder/folder/file
             iZipErr=izUnzip(strTemplate, strWorkDir+"\\", strFileName);
             if(iZipErr)
-                MsgBox("–û—à–∏–±–∫–∞ "+String(iZipErr)+" –ø—Ä–∏ —Ä–∞—Å–ø–∞–∫–æ–≤–∫–∏ —Ñ–∞–π–ª–∞ "+strFileName+" –∏–∑ –∞—Ä—Ö–∏–≤–∞ "+strTemplate+" –≤ "+strWorkDir);
+                MsgBox("éË®°™† "+String(iZipErr)+" Ø‡® ‡†·Ø†™Æ¢™® ‰†©´† "+strFileName+" ®ß †‡Â®¢† "+strTemplate+" ¢ "+strWorkDir);
                 return false;
             end;
         end;
@@ -127,7 +128,7 @@ class TBaseXmlDoc(strTemplate_)
 
     /* */
     onerror(er)
-        msgbox(er.Message + " (—Å—Ç—Ä–æ–∫–∞ " + er.line + ")");
+        msgbox(er.Message + " (·‚‡Æ™† " + er.line + ")");
         return false;
     /*    */
     end; /* UnZipContent */
@@ -198,7 +199,7 @@ class TBaseXmlDoc(strTemplate_)
 
         var zipFilePath=strWorkDir+"\\" +strReportName+strFormExt;
         if (not CopyFile (strTemplate, zipFilePath))
-            PrintLn("–û—à–∏–±–∫–∞ –∫–æ–ø–∏—Ä–æ–≤–∞–Ω–∏—è "+strTemplate+"->"+zipFilePath);
+            PrintLn("éË®°™† ™ÆØ®‡Æ¢†≠®Ô "+strTemplate+"->"+zipFilePath);
             return false;
         end;
 
@@ -206,7 +207,7 @@ class TBaseXmlDoc(strTemplate_)
         for(strFile, aZipFiles)
             iZipErr=izZip(strReportName+strFormExt, strWorkDir, strFile);
             if(iZipErr)
-                MsgBox("–û—à–∏–±–∫–∞ " + String(iZipErr) + " –ø—Ä–∏ –¥–æ–±–∞–≤–ª–µ–Ω–∏–∏ " + strFile+ " –≤ " + strReportName+strFormExt + " –≤ "+strWorkDir );
+                MsgBox("éË®°™† " + String(iZipErr) + " Ø‡® §Æ°†¢´•≠®® " + strFile+ " ¢ " + strReportName+strFormExt + " ¢ "+strWorkDir );
                 return false;
             else
                 RemoveFile(strWorkDir+"\\"+strFile);
@@ -216,21 +217,21 @@ class TBaseXmlDoc(strTemplate_)
 
         var sDstPath; //2015.11.13
         if ((ValType(strTermDst)==V_STRING) and (strTermDst!=""))
-        //—Å—á–∏—Ç–∞–µ–º, —á—Ç–æ –ø–µ—Ä–µ–¥–∞–Ω –ø—É—Ç—å –∏ –±—É–¥–µ–º —Å–æ—Ö—Ä–∞–Ω—è—Ç—å –≤ –Ω–µ–≥–æ
+        //·Á®‚†•¨, Á‚Æ Ø•‡•§†≠ Ø„‚Ï ® °„§•¨ ·ÆÂ‡†≠Ô‚Ï ¢ ≠•£Æ
             If  (substr(strTermDst, strlen(strTermDst))!= "\\")
                 strTermDst=strTermDst+ "\\";
             End;
             strTermDst=strTermDst+strReportName+strFormExt;
             sDstPath=strTermDst;
         else
-        //—Å—á–∏—Ç–∞–µ–º, —á—Ç–æ –ø—É—Ç—å –Ω–µ –ø–µ—Ä–µ–¥–∞–Ω. –∫–æ–ø–∏—Ä—É–µ–º –Ω–∞ —Ç–µ—Ä–º–∏–Ω–∞–ª
-            //–ø—Ä–∏ –∫–æ–ø–∏—Ä–æ–≤–∞–Ω–∏–∏ —Ñ–∞–π–ª–æ–≤ –Ω–∞ —Ç–µ—Ä–º–∏–Ω–∞–ª –æ–Ω–∏ –ø–æ–ø–∞–¥–∞—é—Ç –≤ –ø–∞–ø–∫—É 
+        //·Á®‚†•¨, Á‚Æ Ø„‚Ï ≠• Ø•‡•§†≠. ™ÆØ®‡„•¨ ≠† ‚•‡¨®≠†´
+            //Ø‡® ™ÆØ®‡Æ¢†≠®® ‰†©´Æ¢ ≠† ‚•‡¨®≠†´ Æ≠® ØÆØ†§†Ó‚ ¢ Ø†Ø™„ 
             CheckTermTools();
             strTermDst=CallRemoteRsl ("termtools.mac", "GetIniString", "UPDIR",".\\RSEXTT.INI");
             if ((strTermDst!="") and (SubStr(strTermDst,StrLen(strTermDst))!="\\"))
                 strTermDst=strTermDst+"\\";
             end;
-            /* –ö–æ–ø–∏—Ä–æ–≤–∞–Ω–∏–µ –Ω–∞ —Ç–µ—Ä–º–∏–Ω–∞–ª */
+            /* äÆØ®‡Æ¢†≠®• ≠† ‚•‡¨®≠†´ */
             strTermDst=strTermDst+strReportName+strFormExt;
             sDstPath="$"+strTermDst;
         end;
@@ -240,10 +241,10 @@ class TBaseXmlDoc(strTemplate_)
                RemoveFile(zipFilePath);
                RemoveDir(strWorkDir);
             end;
-            //DebugPrint("–§–∞–π–ª –ø–µ—Ä–µ–º–µ—â–µ–Ω –Ω–∞ —Ç–µ—Ä–º–∏–Ω–∞–ª");
+            //DebugPrint("î†©´ Ø•‡•¨•È•≠ ≠† ‚•‡¨®≠†´");
             return true;
         else
-            PrintLn("–û—à–∏–±–∫–∞ –ø–µ—Ä–µ–Ω–æ—Å–∞ " + zipFilePath + " -> " + sDstPath);
+            PrintLn("éË®°™† Ø•‡•≠Æ·† " + zipFilePath + " -> " + sDstPath);
         end;
         return false;
 
@@ -275,30 +276,29 @@ end; //class TBaseXmlDoc
 class (TBaseXmlDoc) TOpenDocForm(strFormPath_)
     //var DOMDOC;
     //var strFolder=strFormPath;
-    //var strBaseName:String;       /* –ò–º—è –æ—Ç—á–µ—Ç–∞, –¥–ª–∏–Ω–Ω–∞—è –±–µ—Å—Ç–æ–ª–∫–æ–≤–∞—è —Ñ–∏–≥–Ω—è         */
-    var strDefTableName="–¢–∞–±–ª–∏—Ü–∞1";/* –ò–º—è —Ç–∞–±–ª–∏—Ü—ã                                   */
-    var strTableName;             /* –ò–º—è —Ç–∞–±–ª–∏—Ü—ã                                   */
-    var domTableNode;             /* –û–±—ä–µ–∫—Ç –¢–∞–±–ª–∏—Ü–∞, –µ—Å–ª–∏ –∏—Å–ø–æ–ª—å–∑—É–µ—Ç—Å—è             */
-    var iTableFooterRows=0;       /* –°—Ç—Ä–æ–∫ –≤ —Ö–≤–æ—Å—Ç–µ —Ç–∞–±–ª–∏—Ü—ã –ø–æ—Å–ª–µ —Å—Ç—Ä–æ–∫–∏-–æ–±—Ä–∞–∑—Ü–∞, 
-                                    –µ—Å–ª–∏ –æ–Ω–∏ –µ—Å—Ç—å –Ω–∞–¥–æ –ø—Ä–æ–∏–Ω–∏—Ü–∏–∞–ª–∏–∑–∏—Ä–æ–≤–∞—Ç—å –¥–æ –≤—ã–∑–æ–≤–∞ —Ç–∞–±–ª–∏—Ü—ã  */
-    var domNewRowNode;            /* –û–±—ä–µ–∫—Ç –û–±—Ä–∞–∑—Ü–æ–≤–∞—è —Å—Ç—Ä–æ–∫–∞                      */
-    var iRow;                     /* –°–æ–¥–µ—Ä–∂–∏—Ç —Å—á–µ—Ç—á–∏–∫ —Å—Ç—Ä–æ–∫ –≤ —Ç–µ–∫—É—â–µ–π –¢–∞–±–ª–∏—Ü–µ      */
-    var domRow;                   /* –í—Ä–µ–º–µ–Ω–Ω–∞—è –ø–µ—Ä–µ–º–µ–Ω–Ω–∞—è –¥–ª—è —Å–æ—Ö—Ä–∞–Ω–µ–Ω–∏—è —Å—Å—ã–ª–∫–∏    */ 
-                                  /* –Ω–∞ —Å—Ç—Ä–æ–∫—É –≤ –¢–∞–±–ª–∏—Ü–µ –∫–æ—Ç–æ—Ä–∞—è –±—É–¥–µ—Ç –∑–∞–ø–æ–ª–Ω—è—Ç—å—Å—è */
-    var bSaveCalled:Bool=false;   /* –§–ª–∞–≥ –≤—ã–∑–æ–≤–∞ –º–µ—Ç–æ–¥–∞ Save                       */ 
-    var AutoPrint=false;          /* –§–ª–∞–≥ –∞–≤—Ç–æ–º–∞—Ç–∏—á–µ—Å–∫–æ–π –ø–µ—á–∞—Ç–∏ –Ω–∞ def –ø—Ä–∏–Ω—Ç–µ—Ä     */
-    var Printer;                  /* –ü—Ä–∏–Ω—Ç–µ—Ä –¥–ª—è –ø–µ—á–∞—Ç–∏, –æ—Ç–ª–∏—á–Ω—ã–π –æ—Ç —É–º–æ–ª—á–∞–ª—å–Ω–æ–≥–æ  */
-    var strSectionName="–†–∞–∑–¥–µ–ª1"; /* –ò–º—è —Ä–∞–∑–¥–µ–ª–∞-—à–∞–±–ª–æ–Ω–∞                           */
-    var strSectionBaseName:String;/* –ò–º—è —Ä–∞–∑–¥–µ–ª–∞-—à–∞–±–ª–æ–Ω–∞                           */
-    var domSectionNode;           /* –û–±—ä–µ–∫—Ç —Ä–∞–∑–¥–µ–ª, –µ—Å–ª–∏ –∏—Å–ø–æ–ª—å–∑—É–µ—Ç—Å—è              */
-    var domSectionNewNode;        /* –û–±—ä–µ–∫—Ç —Ä–∞–∑–¥–µ–ª-—à–∞–±–ª–æ–Ω                          */
-    var iSection=0;               /* –°—á—ë—Ç—á–∏–∫ —Ä–∞–∑–¥–µ–ª–æ–≤                              */
-    var aSectionFields;           /* –ù–∞–∑–≤–∞–Ω–∏—è –ø–æ–ª–µ–π, –∑–∞–≤–∏—Å–∏–º—ã—Ö –æ—Ç —Ä–∞–∑–¥–µ–ª–∞          */
+    //var strBaseName:String;       /* à¨Ô Æ‚Á•‚†, §´®≠≠†Ô °•·‚Æ´™Æ¢†Ô ‰®£≠Ô         */
+    var strDefTableName="í†°´®Ê†1";/* à¨Ô ‚†°´®ÊÎ                                   */
+    var strTableName;             /* à¨Ô ‚†°´®ÊÎ                                   */
+    var domTableNode;             /* é°Í•™‚ í†°´®Ê†, •·´® ®·ØÆ´Ïß„•‚·Ô             */
+    var iTableFooterRows=0;       /* ë‚‡Æ™ ¢ Â¢Æ·‚• ‚†°´®ÊÎ ØÆ·´• ·‚‡Æ™®-Æ°‡†ßÊ†, 
+                                    •·´® Æ≠® •·‚Ï ≠†§Æ Ø‡Æ®≠®Ê®†´®ß®‡Æ¢†‚Ï §Æ ¢ÎßÆ¢† ‚†°´®ÊÎ  */
+    var domNewRowNode;            /* é°Í•™‚ é°‡†ßÊÆ¢†Ô ·‚‡Æ™†                      */
+    var iRow;                     /* ëÆ§•‡¶®‚ ·Á•‚Á®™ ·‚‡Æ™ ¢ ‚•™„È•© í†°´®Ê•      */
+    var domRow;                   /* Ç‡•¨•≠≠†Ô Ø•‡•¨•≠≠†Ô §´Ô ·ÆÂ‡†≠•≠®Ô ··Î´™®    */ 
+                                  /* ≠† ·‚‡Æ™„ ¢ í†°´®Ê• ™Æ‚Æ‡†Ô °„§•‚ ß†ØÆ´≠Ô‚Ï·Ô */
+    var bSaveCalled:Bool=false;   /* î´†£ ¢ÎßÆ¢† ¨•‚Æ§† Save                       */ 
+    var Printer;                  /* è‡®≠‚•‡ §´Ô Ø•Á†‚®, Æ‚´®Á≠Î© Æ‚ „¨Æ´Á†´Ï≠Æ£Æ  */
+    var strSectionName="ê†ß§•´1"; /* à¨Ô ‡†ß§•´†-Ë†°´Æ≠†                           */
+    var strSectionBaseName:String;/* à¨Ô ‡†ß§•´†-Ë†°´Æ≠†                           */
+    var domSectionNode;           /* é°Í•™‚ ‡†ß§•´, •·´® ®·ØÆ´Ïß„•‚·Ô              */
+    var domSectionNewNode;        /* é°Í•™‚ ‡†ß§•´-Ë†°´Æ≠                          */
+    var iSection=0;               /* ëÁÒ‚Á®™ ‡†ß§•´Æ¢                              */
+    var aSectionFields;           /* ç†ß¢†≠®Ô ØÆ´•©, ß†¢®·®¨ÎÂ Æ‚ ‡†ß§•´†          */
     /* var domUserFieldDecl;         /* */*/
 
 
 
-    /* –Ø–≤–ª—è–µ—Ç—Å—è –ª–∏ –¥–∞–Ω–Ω–∞—è –ø–µ—Ä–µ–º–µ–Ω–Ω–∞—è –∑–∞–≤–∏—Å–∏–º–æ–π –æ—Ç –∫–æ–Ω—Ç–µ–∫—Å—Ç–∞ —Ä–∞–∑–¥–µ–ª–∞ */
+    /* ü¢´Ô•‚·Ô ´® §†≠≠†Ô Ø•‡•¨•≠≠†Ô ß†¢®·®¨Æ© Æ‚ ™Æ≠‚•™·‚† ‡†ß§•´† */
     macro IsSectionField(strFieldName)
         return InArray(aSectionFields,strFieldName)
     end; /* macro IsSectionField */
@@ -334,7 +334,7 @@ class (TBaseXmlDoc) TOpenDocForm(strFormPath_)
 
         if (IsSectionField(strFieldName))
             if (iSection==0)
-                MsgBox("–ü–æ–ø—ã—Ç–∫–∞ —É—Å—Ç–∞–Ω–æ–≤–∏—Ç—å –∑–∞–≤–∏—Å—è—â—É—é –æ—Ç —Ä–∞–∑–¥–µ–ª–∞ –ø–µ—Ä–µ–º–µ–Ω–Ω—É—é "+strFieldName+" –≤–Ω–µ –∫–æ–Ω—Ç–µ–∫—Å—Ç–∞ —Ä–∞–∑–¥–µ–ª–∞");
+                MsgBox("èÆØÎ‚™† „·‚†≠Æ¢®‚Ï ß†¢®·ÔÈ„Ó Æ‚ ‡†ß§•´† Ø•‡•¨•≠≠„Ó "+strFieldName+" ¢≠• ™Æ≠‚•™·‚† ‡†ß§•´†");
                 return false;
             end;
             strFieldName=domSectionNode.getAttribute("text:name")+"_"+strFieldName;
@@ -344,7 +344,7 @@ class (TBaseXmlDoc) TOpenDocForm(strFormPath_)
         DebugPrint(strXPath);
         domNodes=DOMDoc.documentElement.selectNodes(strXPath);
         if (domNodes.length==0)
-            MsgBox("–í —à–∞–±–ª–æ–Ω–µ –ø–æ–ª–µ "+strFieldName+" –Ω–µ –Ω–∞–π–¥–µ–Ω–æ ");
+            MsgBox("Ç Ë†°´Æ≠• ØÆ´• "+strFieldName+" ≠• ≠†©§•≠Æ ");
             return false;
         end;
         domNode=domNodes.Item(0);
@@ -371,8 +371,8 @@ class (TBaseXmlDoc) TOpenDocForm(strFormPath_)
 
         domNode.setAttribute(strXmlType, v);
 
-        //20151116 –ï—Å–ª–∏ –Ω–µ –º–µ–Ω—è—Ç—å –ø–æ –≤—Å–µ–º—É —Ç–µ–∫—Å—Ç—É, —Ç–æ LibreOffice –æ—Ç–∫—Ä—ã–≤–∞–µ—Ç –Ω–æ—Ä–º–∞–ª—å–Ω–æ, 
-        //–Ω–æ M$Word –Ω–µ –æ–±–Ω–æ–≤–ª—è–µ—Ç, –ø–æ—ç—Ç–æ–º—É –Ω–∞—Ö–æ–¥–∏–º –≤—Å–µ –≤—Ö–æ–∂–¥–µ–Ω–∏—è –ø–æ–ª—è –∏ –º–µ–Ω—è–µ–º
+        //20151116 Ö·´® ≠• ¨•≠Ô‚Ï ØÆ ¢·•¨„ ‚•™·‚„, ‚Æ LibreOffice Æ‚™‡Î¢†•‚ ≠Æ‡¨†´Ï≠Æ, 
+        //≠Æ M$Word ≠• Æ°≠Æ¢´Ô•‚, ØÆÌ‚Æ¨„ ≠†ÂÆ§®¨ ¢·• ¢ÂÆ¶§•≠®Ô ØÆ´Ô ® ¨•≠Ô•¨
         strXPath="//text:user-field-get[@text:name='"+strFieldName+"']";
         DebugPrint(strXPath);
         domNodes=DOMDoc.documentElement.selectNodes(strXPath);
@@ -382,7 +382,7 @@ class (TBaseXmlDoc) TOpenDocForm(strFormPath_)
         end;
 
         onerror(er)
-            msgbox(er.Message + " (—Å—Ç—Ä–æ–∫–∞ " + er.line + ")|"+"–û—à–∏–±–∫–∞ —É—Å—Ç–∞–Ω–æ–≤–∫–∏ –∑–Ω–∞—á–µ–Ω–∏—è ["+String(v)+"]| –ø–æ–ª—è ["+strFieldName+"]");
+            msgbox(er.Message + " (·‚‡Æ™† " + er.line + ")|"+"éË®°™† „·‚†≠Æ¢™® ß≠†Á•≠®Ô ["+String(v)+"]| ØÆ´Ô ["+strFieldName+"]");
             return false;
     end; /* macro SetField */
 
@@ -395,7 +395,7 @@ class (TBaseXmlDoc) TOpenDocForm(strFormPath_)
 
         domNodes=DOMDoc.documentElement.selectNodes("//text:variable-set[@text:name='"+strFieldName+"']");
         if (domNodes.length==0)
-            MsgBox("–í —à–∞–±–ª–æ–Ω–µ –ø–µ—Ä–µ–º–µ–Ω–Ω–∞—è "+strFieldName+" –Ω–µ –Ω–∞–π–¥–µ–Ω–∞ ");
+            MsgBox("Ç Ë†°´Æ≠• Ø•‡•¨•≠≠†Ô "+strFieldName+" ≠• ≠†©§•≠† ");
             return false;
         end;
         domNode=domNodes.Item(0);
@@ -425,7 +425,7 @@ class (TBaseXmlDoc) TOpenDocForm(strFormPath_)
         var strTermDst:String;
 
         if ((ValType(sDestFolder)==V_STRING) and (sDestFolder!=""))
-        //—Ä–µ–∂–∏–º –≤–≤–µ–¥—ë–Ω –¥–ª—è –º–∞—Å—Å–æ–≤–æ–≥–æ –±–µ–∑–∏–Ω—Ç–µ—Ä—Ñ–µ–π—Å–Ω–æ–≥–æ —Ñ–æ—Ä–º–∏—Ä–æ–≤–∞–Ω–∏—è —Ñ–∞–π–ª–æ–≤     
+        //‡•¶®¨ ¢¢•§Ò≠ §´Ô ¨†··Æ¢Æ£Æ °•ß®≠‚•‡‰•©·≠Æ£Æ ‰Æ‡¨®‡Æ¢†≠®Ô ‰†©´Æ¢     
             var sPath=sDestFolder;
             if (DocSave(@sPath))
                 return sPath;
@@ -437,12 +437,12 @@ class (TBaseXmlDoc) TOpenDocForm(strFormPath_)
                 var strArgs:String;
                 strArgs=strTermDst;
                 if (AutoPrint)
-                //–ø–µ—á–∞—Ç—å
+                //Ø•Á†‚Ï
                     if ((ValType(Printer)!=V_UNDEF) and (Printer!=""))
-                        //–Ω–∞ —É–∫–∞–∑–∞–Ω–Ω—ã–π –ø—Ä–∏–Ω—Ç–µ—Ä
+                        //≠† „™†ß†≠≠Î© Ø‡®≠‚•‡
                         strArgs="-pt " +Printer+ " "+ strArgs;
                     else
-                        //–Ω–∞ –ø—Ä–∏–Ω—Ç–µ—Ä –ø–æ —É–º–æ–ª—á–∞–Ω–∏—é
+                        //≠† Ø‡®≠‚•‡ ØÆ „¨Æ´Á†≠®Ó
                         strArgs="-p" + strArgs;
                     end;
                 end;
@@ -456,7 +456,7 @@ class (TBaseXmlDoc) TOpenDocForm(strFormPath_)
 
 
 
-    /* –ò–Ω–∏—Ü–∏–∞–ª–∏–∑–∞—Ü–∏—è —Ç–∞–±–ª–∏—Ü—ã –¥–ª—è –≤—ã–≤–æ–¥–∞ */
+    /* à≠®Ê®†´®ß†Ê®Ô ‚†°´®ÊÎ §´Ô ¢Î¢Æ§† */
     macro Table(sParamName)
         var strXPath:String;
         var domNodes;
@@ -471,8 +471,8 @@ class (TBaseXmlDoc) TOpenDocForm(strFormPath_)
 
         /**/
         if  (ValType(domSectionNewNode)!=V_UNDEF)
-        /* –ï—Å–ª–∏ –æ–ø—Ä–µ–¥–µ–ª—ë–Ω —Ä–∞–∑–¥–µ–ª-—à–∞–±–ª–æ–Ω, —Ç–æ –∏—â–µ–º –≤ –Ω—ë–º, –µ—Å–ª–∏ –Ω–∞—Ö–æ–¥–∏–º, 
-           —Ç–æ —ç—Ç–æ –ø–æ–≤—Ç–æ—Ä—è—é—â–∞—è—Å—è —Ç–∞–±–ª–∏—Ü–∞ –∏ –∫ –µ—ë –∏–º–µ–Ω–∏ –Ω–∞–¥–æ –ø—Ä–∏–ø–∏—Å—ã–≤–∞—Ç—å –∏–º—è —Ä–∞–∑–¥–µ–ª–∞ */
+        /* Ö·´® ÆØ‡•§•´Ò≠ ‡†ß§•´-Ë†°´Æ≠, ‚Æ ®È•¨ ¢ ≠Ò¨, •·´® ≠†ÂÆ§®¨, 
+           ‚Æ Ì‚Æ ØÆ¢‚Æ‡ÔÓÈ†Ô·Ô ‚†°´®Ê† ® ™ •Ò ®¨•≠® ≠†§Æ Ø‡®Ø®·Î¢†‚Ï ®¨Ô ‡†ß§•´† */
             DebugPrint("Table: section detected");
             strXPath=".//table:table[@table:name='"+strTableName+"']";
             DebugPrint(strXPath);
@@ -489,7 +489,7 @@ class (TBaseXmlDoc) TOpenDocForm(strFormPath_)
         DebugPrint(strXPath);
         domNodes=DOMDoc.documentElement.selectNodes(strXPath);
         if (domNodes.length==0)
-            MsgBox("–í —à–∞–±–ª–æ–Ω–µ –Ω–µ –Ω–∞–π–¥–µ–Ω–æ —Ç–∞–±–ª–∏—Ü—ã "+strTableName+"");
+            MsgBox("Ç Ë†°´Æ≠• ≠• ≠†©§•≠Æ ‚†°´®ÊÎ "+strTableName+"");
             return false;
         end;
         domTableNode=domNodes.Item(0);
@@ -507,7 +507,7 @@ class (TBaseXmlDoc) TOpenDocForm(strFormPath_)
         iRow=0;
     end; /* macro Table */
 
-    /* –ó–∞–ø–∏—Å–∞—Ç—å –ø–µ—Ä–µ–¥–∞–Ω–Ω—ã–π –º–∞—Å—Å–∏–≤ –∫–∞–∫ —Å—Ç—Ä–æ–∫—É —Ä–∞–Ω–µ–µ –æ–ø—Ä–¥–µ–ª—ë–Ω–Ω–æ–π —Ç–∞–±–ª–∏—Ü—ã —Å–º. Table() */
+    /* á†Ø®·†‚Ï Ø•‡•§†≠≠Î© ¨†··®¢ ™†™ ·‚‡Æ™„ ‡†≠•• ÆØ‡§•´Ò≠≠Æ© ‚†°´®ÊÎ ·¨. Table() */
     macro WriteRow(ar)
         var strXPath:String;
         var i:Integer;
@@ -549,11 +549,11 @@ class (TBaseXmlDoc) TOpenDocForm(strFormPath_)
     end; /* macro SetSectionBaseName */
 
     private macro SectionRename
-        /* <text:section text:name="–®—É–±–ª–æ–Ω" text:style-name="Sect1"> */
+        /* <text:section text:name="ò„°´Æ≠" text:style-name="Sect1"> */
         domSectionNode.setAttribute("text:name")=strSectionBaseName+String(iSection);
     end; /* macro SectionRename */
 
-    /* –æ–ø—Ä–µ–¥–µ–ª—è–µ—Ç —Ä–∞–∑–¥–µ–ª-—à–∞–±–ª–æ–Ω */
+    /* ÆØ‡•§•´Ô•‚ ‡†ß§•´-Ë†°´Æ≠ */
     macro Section(sParamName)
         var strXPath:String;
 
@@ -563,7 +563,7 @@ class (TBaseXmlDoc) TOpenDocForm(strFormPath_)
             strSectionName=sParamName;
         end;
 
-        /* <text:section text:name="–®—É–±–ª–æ–Ω" text:style-name="Sect1"> */
+        /* <text:section text:name="ò„°´Æ≠" text:style-name="Sect1"> */
         strXPath="//text:section[@text:name='"+strSectionName+"']";
         domSectionNode=DOMDoc.documentElement.selectNodes(strXPath).Item(0);
         DebugPrint(domSectionNode.nodeName);
@@ -572,7 +572,7 @@ class (TBaseXmlDoc) TOpenDocForm(strFormPath_)
         SetSectionBaseName();
     end; /* macro Section */
 
-    /* –∫–æ–ø–∏—Ä—É–µ—Ç —Ä–∞–Ω–µ–µ –æ–ø—Ä–µ–¥–µ–ª—ë–Ω–Ω—ã–π —Ä–∞–∑–¥–µ–ª-—à–∞–±–ª–æ–Ω */
+    /* ™ÆØ®‡„•‚ ‡†≠•• ÆØ‡•§•´Ò≠≠Î© ‡†ß§•´-Ë†°´Æ≠ */
     macro SectionNew()
         if (ValType(domSectionNewNode)==V_UNDEF)
             return false;
@@ -581,7 +581,7 @@ class (TBaseXmlDoc) TOpenDocForm(strFormPath_)
         domSectionNode=domSectionInsertedNode;
     end; /* macro SectionNew() */
 
-    /* –¥–ª—è —Ç–∞–±–ª–∏—Ü –≤–Ω—É—Ç—Ä–∏ —Ä–∞–∑–¥–µ–ª–∞ –¥–æ–±–∞–≤–≤–ª—è–µ—Ç —Å–ø–µ—Ä–µ–¥–∏ –∏–º—è —Ä–∞–∑–¥–µ–ª–∞ */
+    /* §´Ô ‚†°´®Ê ¢≠„‚‡® ‡†ß§•´† §Æ°†¢¢´Ô•‚ ·Ø•‡•§® ®¨Ô ‡†ß§•´† */
     private macro SectionTableRename
         var strXPath="table:table";
         var domSectionTables=domSectionNode.selectNodes(strXPath);
@@ -605,7 +605,7 @@ class (TBaseXmlDoc) TOpenDocForm(strFormPath_)
     end;
 
 
-    /* –∏–∑–º–µ–Ω—è–µ—Ç –Ω–∞–∑–≤–∞–Ω–∏—è –ø–æ–ª—å–∑–æ–≤–∞—Ç–µ–ª—å—Å–∫–∏—Ö –ø–æ–ª–µ–π –≤ –∫–æ–Ω—Ç–µ–∫—Å—Ç–µ —Ä–∞–∑–¥–µ–ª–∞ */
+    /* ®ß¨•≠Ô•‚ ≠†ß¢†≠®Ô ØÆ´ÏßÆ¢†‚•´Ï·™®Â ØÆ´•© ¢ ™Æ≠‚•™·‚• ‡†ß§•´† */
     private macro SectionFieldsRename()
         if (not IsEqClass ("TArray", aSectionFields))    
             return false; 
@@ -633,13 +633,13 @@ class (TBaseXmlDoc) TOpenDocForm(strFormPath_)
     end; /* macro SectionFieldsRename */
 
 
-    /* –≤—ã–∑—ã–≤–∞—Ç—å –≤ –Ω–∞—á–∞–ª–µ —Ç–µ–ª–∞ —Ü–∏–∫–ª–∞ –≤—ã–≤–æ–¥–∞ —Ä–∞–∑–¥–µ–ª–∞ */
+    /* ¢ÎßÎ¢†‚Ï ¢ ≠†Á†´• ‚•´† Ê®™´† ¢Î¢Æ§† ‡†ß§•´† */
     macro SectionAdd
         if (0==iSection)
-        /* –ø–µ—Ä–≤—ã–π —Ä–∞–∑–¥–µ–ª. –∏—Å–ø–æ–ª—å–∑—É–µ—Ç—Å—è —Ç–æ—Ç, —á—Ç–æ –µ—Å—Ç—å */
+        /* Ø•‡¢Î© ‡†ß§•´. ®·ØÆ´Ïß„•‚·Ô ‚Æ‚, Á‚Æ •·‚Ï */
             iSection=1;
         else
-        /* –Ω–µ –ø–µ—Ä–≤—ã–π —Ä–∞–∑–¥–µ–ª. –≤—Å—Ç–∞–≤–ª—è–µ—Ç—Å—è –Ω–æ–≤—ã–π       */
+        /* ≠• Ø•‡¢Î© ‡†ß§•´. ¢·‚†¢´Ô•‚·Ô ≠Æ¢Î©       */
             SectionNew();
             iSection=iSection+1;
         end;
@@ -685,7 +685,7 @@ class (TBaseXmlDoc) TMsDocForm(strFormPath_)
         DOMDoc.setProperty("SelectionLanguage",   "XPath");
         DOMDoc.setProperty("SelectionNamespaces", "xmlns:ve='http://schemas.openxmlformats.org/markup-compatibility/2006' xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:r='http://schemas.openxmlformats.org/officeDocument/2006/relationships' xmlns:m='http://schemas.openxmlformats.org/officeDocument/2006/math' xmlns:v='urn:schemas-microsoft-com:vml' xmlns:wp='http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing' xmlns:w10='urn:schemas-microsoft-com:office:word' xmlns:w='http://schemas.openxmlformats.org/wordprocessingml/2006/main' xmlns:wne='http://schemas.microsoft.com/office/word/2006/wordml'");
 
-        //–¥–ª—è M$Word –Ω—É–∂–µ–Ω –µ—â—ë –æ–¥–∏–Ω —Ñ–∞–π–ª
+        //§´Ô M$Word ≠„¶•≠ •ÈÒ Æ§®≠ ‰†©´
         domSettings = ActiveX("MSXML.DOMDocument");
         domSettings.async = False;
         if (not LoadXml(domSettings, "word\\settings.xml"))
@@ -708,7 +708,7 @@ class (TBaseXmlDoc) TMsDocForm(strFormPath_)
         var nodeSeparate; //<w:r w:rsidR="004B59E8"><w:fldChar w:fldCharType="separate"/>
         var nodeFildValue;
 
-        //–í–æ–∑–≤—Ä–∞—â–∞–µ—Ç –∞—Ç—Ä–∏–±—É—Ç –¥–ª—è —Å–ª–æ–∂–Ω–æ–≥–æ –ø–æ–ª—è –∏–ª–∏ –ø—É—Å—Ç–æ
+        //ÇÆß¢‡†È†•‚ †‚‡®°„‚ §´Ô ·´Æ¶≠Æ£Æ ØÆ´Ô ®´® Ø„·‚Æ
         macro GetFieldPart(domNode)  
             var domNodes=domNode.GetElementsByTagName("w:fldChar");
             if (domNodes.length>0)
@@ -719,7 +719,7 @@ class (TBaseXmlDoc) TMsDocForm(strFormPath_)
 
         if (not InitOk) return false; end;
 
-        // 1. –£—Å—Ç–∞–Ω–æ–≤–∫–∞ –∑–Ω–∞—á–µ–Ω–∏—è –ø–æ–ª—è –≤ Settings
+        // 1. ì·‚†≠Æ¢™† ß≠†Á•≠®Ô ØÆ´Ô ¢ Settings
         strXPath="//w:docVar[@w:name='"+strFieldName+"']";
         DebugPrint(strXPath);
         domNodes=domSettings.documentElement.selectNodes(strXPath);
@@ -737,7 +737,7 @@ class (TBaseXmlDoc) TMsDocForm(strFormPath_)
             domNode=domParent.appendChild(domNewNode);
             domNode.setAttribute("w:name", strFieldName);
         //
-            //MsgBox("–í —à–∞–±–ª–æ–Ω–µ –ø–æ–ª–µ "+strFieldName+" –Ω–µ –Ω–∞–π–¥–µ–Ω–æ ");
+            //MsgBox("Ç Ë†°´Æ≠• ØÆ´• "+strFieldName+" ≠• ≠†©§•≠Æ ");
             //return false;
         else
             domNode=domNodes.Item(0);
@@ -745,12 +745,12 @@ class (TBaseXmlDoc) TMsDocForm(strFormPath_)
         domNode.setAttribute("w:val", v);
 
         if  (modeFieldChange>0)
-            // 2. –£—Å—Ç–∞–Ω–æ–≤–∫–∞ –∑–Ω–∞—á–µ–Ω–∏—è –ø–æ–ª—è –≤ Document
-            // –ï—Å–ª–∏ –Ω–∏—á–µ–≥–æ –Ω–µ –¥–µ–ª–∞—Ç—å —Å –¥–æ–∫—É–º–µ–Ω—Ç–æ–º, —Ç–æ –ø—Ä–∏ –æ—Ç–∫—Ä—ã—Ç–∏–∏ –ø–æ–ª—è –±—É–¥—É—Ç "—Å—Ç–∞—Ä—ã–µ" –∏ —Ç–æ–ª—å–∫–æ –ø–æ—Å–ª–µ Cltr-A F9 –æ–Ω–∏ –æ–±–Ω–æ–≤—è—Ç—Å—è
+            // 2. ì·‚†≠Æ¢™† ß≠†Á•≠®Ô ØÆ´Ô ¢ Document
+            // Ö·´® ≠®Á•£Æ ≠• §•´†‚Ï · §Æ™„¨•≠‚Æ¨, ‚Æ Ø‡® Æ‚™‡Î‚®® ØÆ´Ô °„§„‚ "·‚†‡Î•" ® ‚Æ´Ï™Æ ØÆ·´• Cltr-A F9 Æ≠® Æ°≠Æ¢Ô‚·Ô
             strXPath="//w:r[starts-with(normalize-space(w:instrText),'DOCVARIABLE "+strFieldName+" ' ) or normalize-space(w:instrText)='DOCVARIABLE "+strFieldName+"']";
             //DebugPrint(strXPath);
-            //–ø–æ–∫–∞ –≤—ã–±–∏—Ä–∞–µ–º —É–ø—Ä–æ—â—ë–Ω–Ω—ã–π –≤–∞—Ä–∏–∞–Ω—Ç, –∏–Ω–≤–∞–ª–∏–¥–∏—É–µ–º –ø–æ–ª—è. –≤ —ç—Ç–æ–º —Å–ª—É—á–∞–µ –≤–æ—Ä–¥ –ø—Ä–∏ –æ—Ç–∫—Ä—ã—Ç–∏–∏ –±—É–¥–µ—Ç —Å–ø—Ä–∞—à–∏–≤–∞—Ç—å –æ–±–Ω–æ–≤–∏—Ç—å? —Å–∫–∞–∂–µ–º –µ–º—É –¥–∞ –∏ –ø–æ–ª—è –æ–±–Ω–æ–≤—è—Ç—Å—è
-            //–≤ –±—É–¥—É—â–µ–º –Ω–∞–¥–æ –ø–µ—Ä–µ–ø–∏—Å–∞—Ç—å –Ω–∞ –∑–∞–º–µ–Ω—É –∫—É—Å–∫–∞ DOM —Å–º. http://officeopenxml.com/WPfields.php
+            //ØÆ™† ¢Î°®‡†•¨ „Ø‡ÆÈÒ≠≠Î© ¢†‡®†≠‚, ®≠¢†´®§®„•¨ ØÆ´Ô. ¢ Ì‚Æ¨ ·´„Á†• ¢Æ‡§ Ø‡® Æ‚™‡Î‚®® °„§•‚ ·Ø‡†Ë®¢†‚Ï Æ°≠Æ¢®‚Ï? ·™†¶•¨ •¨„ §† ® ØÆ´Ô Æ°≠Æ¢Ô‚·Ô
+            //¢ °„§„È•¨ ≠†§Æ Ø•‡•Ø®·†‚Ï ≠† ß†¨•≠„ ™„·™† DOM ·¨. http://officeopenxml.com/WPfields.php
             var domNodesBegin;
             var domNodesSeparate;
             domNodes=domDoc.documentElement.selectNodes(strXPath);
@@ -758,14 +758,14 @@ class (TBaseXmlDoc) TMsDocForm(strFormPath_)
             for (i, 0, domNodes.length-1, 1)
                 iSubFld=0;
                 if(1==modeFieldChange)
-                    strXPath="preceding-sibling::w:r/w:fldChar[@w:fldCharType='begin' and last()]";  //–ø–æ—Å–ª–µ–¥–Ω–∏–π 
+                    strXPath="preceding-sibling::w:r/w:fldChar[@w:fldCharType='begin' and last()]";  //ØÆ·´•§≠®© 
                     domNodesBegin=domNodes.item(i).selectNodes(strXPath);
                     for (j, 0, domNodesBegin.length-1, 1)
                         domNodesBegin.item(j).setAttribute("w:dirty","true");
                     end; //for j
                 elif(2==modeFieldChange) 
                     //strXPath="following-sibling::";
-                    strXPath="following-sibling::w:r[1][w:fldChar/@w:fldCharType='separate']";   //–ø—Ä–≤—ã–π —Å–Ω–∏–∑—É separate –æ—Ç –Ω–∞–π–¥–µ–Ω–Ω–æ–≥–æ –ø–æ–ª—è
+                    strXPath="following-sibling::w:r[1][w:fldChar/@w:fldCharType='separate']";   //Ø‡¢Î© ·≠®ß„ separate Æ‚ ≠†©§•≠≠Æ£Æ ØÆ´Ô
                     domNodesSeparate=domNodes.item(i).selectNodes(strXPath);
                     if (domNodesSeparate.length>0)
                         strXPath="following-sibling::*";
@@ -775,7 +775,7 @@ class (TBaseXmlDoc) TMsDocForm(strFormPath_)
                             if  (sFieldPart=="end")
                                 if (iSubFld==0)
 
-                                    //–≤—Å—Ç–∞–≤–ª—è–µ–º –∏ –∑–∞–∫—Ä—É–≥–ª—è–µ—Å—è
+                                    //¢·‚†¢´Ô•¨ ® ß†™‡„£´Ô•·Ô
                                     domNewNode=domDoc.createNode(XML_NODE_ELEMENT, "w:r", sMsNs);
                                     domNode=domNodesBegin.item(j).parentNode.insertBefore(domNewNode,domNodesBegin.item(j));
                                     //<w:t xml:space="preserve">Ivan </w:t>
@@ -791,15 +791,15 @@ class (TBaseXmlDoc) TMsDocForm(strFormPath_)
                             elif(sFieldPart=="begin")
                                 iSubFld=iSubFld+1;
                             end;
-                            //—á–∏—Å—Ç–∏–º
+                            //Á®·‚®¨
                             domNodesBegin.item(j).parentNode.removeChild(domNodesBegin.item(j));
 
                         end; //for j 
                     else
                         DebugPrint("separate not found. i="+i);
                         /**/
-                                    //–≤—Å—Ç–∞–≤–ª—è–µ–º –ø–æ—Å–ª–µ –Ω–∞–π–¥–µ–Ω–Ω–æ–≥–æ –ø–æ–ª—è
-                                    //range –∏ –≤ –Ω–µ–≥–æ separate
+                                    //¢·‚†¢´Ô•¨ ØÆ·´• ≠†©§•≠≠Æ£Æ ØÆ´Ô
+                                    //range ® ¢ ≠•£Æ separate
                                     domNewNode=domDoc.createNode(XML_NODE_ELEMENT, "w:r", sMsNs);
                                     nodeSeparate=domNodes.item(i).parentNode.insertBefore(domNewNode,domNodes.item(i).nextSibling);
 
@@ -807,11 +807,11 @@ class (TBaseXmlDoc) TMsDocForm(strFormPath_)
                                     domNewNode.SetAttribute("w:fldCharType","separate");
                                     nodeSeparate.appendChild(domNewNode);
 
-                                    //–∞ –ø–æ—Å–ª–µ –Ω–∏—Ö range –∏ –≤ –Ω–µ–≥–æ –∑–Ω–∞—á–µ–Ω–∏–µ –ø–µ—Ä–µ–º–µ–Ω–Ω–æ–π
+                                    //† ØÆ·´• ≠®Â range ® ¢ ≠•£Æ ß≠†Á•≠®• Ø•‡•¨•≠≠Æ©
                                     domNewNode=domDoc.createNode(XML_NODE_ELEMENT, "w:r", sMsNs);
                                     nodeFildValue=domNodes.item(i).parentNode.insertBefore(domNewNode,nodeSeparate.nextSibling);
 
-                                    //–∫–æ–ø–∏—Ä—É–µ–º —Å—Ç–∏–ª—å
+                                    //™ÆØ®‡„•¨ ·‚®´Ï
                                     domNode=domNodes.item(i).SelectSingleNode("w:rPr");
                                     if ((ValType(domNode)!=V_UNDEF) and (domNode!=NullVal))
                                         //PrintLn(GetTypeName(domNode));
@@ -837,15 +837,49 @@ class (TBaseXmlDoc) TMsDocForm(strFormPath_)
 
     end; //macro SetField
 
-    macro Save()
+    macro Save(sDestFolder)
         //bSaveCalled=True;
         //if (not InitOk) return false; end;
 
         domDoc.Save(strWorkDir+"\\word\\document.xml");
         domSettings.Save(strWorkDir+"\\word\\settings.xml");
 
-        DocSave();
+        var strTermDst:String;
+
+        if ((ValType(sDestFolder)==V_STRING) and (sDestFolder!=""))
+        //‡•¶®¨ ¢¢•§Ò≠ §´Ô ¨†··Æ¢Æ£Æ °•ß®≠‚•‡‰•©·≠Æ£Æ ‰Æ‡¨®‡Æ¢†≠®Ô ‰†©´Æ¢     
+            var sPath=sDestFolder;
+            if (DocSave(@sPath))
+                return sPath;
+            else
+                return "";
+            end;
+        else
+            if (DocSave(@strTermDst) and (AutoOpen or AutoPrint))
+                var strArgs:String;
+                strArgs=strTermDst;
+                /*
+                if (AutoPrint)
+                //Ø•Á†‚Ï
+                    if ((ValType(Printer)!=V_UNDEF) and (Printer!=""))
+                        //≠† „™†ß†≠≠Î© Ø‡®≠‚•‡
+                        //strArgs="-pt " +Printer+ " "+ strArgs;
+                    else
+                        //≠† Ø‡®≠‚•‡ ØÆ „¨Æ´Á†≠®Ó
+                        //strArgs="-p" + strArgs;
+                    end;
+                end;
+                */
+                //StartProg ("$"+"swriter", strArgs, true);
+            else
+                return false;
+            end;
+        end;
+        return true;
     end;
+
+
+
 
     macro Destructor()
         Save();
