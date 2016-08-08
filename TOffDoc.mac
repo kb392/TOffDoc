@@ -57,8 +57,8 @@ class TBaseXmlDoc(strTemplate_)
     var strFormFolder:String;
     var strFormName:String;
     var strFormExt:String;
-    var Verbose=true;          //!!!
-    var bRemoveOnServer=false; //!!!    /* Удалять промежуточный файл на сервере         */
+    var Verbose=false; //true;          //!!!
+    var bRemoveOnServer=true;//false; //!!!    /* Удалять промежуточный файл на сервере         */
     var strTemplate;              /* Путь к файлу шаблона                          */
     var InitOk;                   /* Флаг успешной инициализации                   */         
     var strReportName:String;     /* Имя файла отчета, если не заполнится, UID     */
@@ -509,14 +509,23 @@ class (TBaseXmlDoc) TOpenDocForm(strFormPath_)
     end; /* macro Table */
 
     /* Записать переданный массив как строку ранее опрделённой таблицы см. Table() */
+    /* 08.08.2016 Можно передавать массив, а можно список аргументов               */
     macro WriteRow(ar)
         var strXPath:String;
         var i:Integer;
         var domCell;
+        var v,N,pc;
 
         if (not InitOk) return false; end;
 
-        if (not IsEqClass ("TArray", ar))    return false; end;
+        if (IsEqClass ("TArray", ar))    
+            N=ar.Size;
+            pc=false;
+        else
+            N=Parmcount()-1;
+            pc=true;
+        end;
+
         if (V_UNDEF==Valtype(domTableNode))  Table(); end;
         if (iRow>0)
             if (iTableFooterRows>0)
@@ -525,12 +534,17 @@ class (TBaseXmlDoc) TOpenDocForm(strFormPath_)
                 domRow=domTableNode.appendChild(domNewRowNode.cloneNode(true));
             end;
         end;
-        for (i, 0, ar.Size-1, 1)
+        for (i, 0, N-1, 1)
             strXPath="table:table-cell["+String(i+1)+"]/text:p";
             domCell=domRow.selectNodes(strXPath).Item(0);
             DebugPrint(strXPath + " " + domCell.nodeName);
-            if (valtype(ar[i])!=V_UNDEF)
-                domCell.text=XML_EscapeSting(ar[i]);
+            if (pc)
+                GetParm(i+1,v);
+            else
+                v=ar[i];
+            end;
+            if (valtype(v)!=V_UNDEF)
+                domCell.text=XML_EscapeSting(v);
             end;
         end;
         iRow=iRow+1;
@@ -890,4 +904,5 @@ class (TBaseXmlDoc) TMsDocForm(strFormPath_)
     /* Constructor */
     InitOk=Init2(strFormPath_);
 end; //class TMsDocForm
+
 
