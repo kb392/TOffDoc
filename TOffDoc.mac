@@ -1,5 +1,5 @@
 /* toffdocxml.mac                                           */
-/* Библотека создания офисных документов на основе шаблонов */
+/* ╨С╨╕╨▒╨╗╨╛╤В╨╡╨║╨░ ╤Б╨╛╨╖╨┤╨░╨╜╨╕╤П ╨╛╤Д╨╕╤Б╨╜╤Л╤Е ╨┤╨╛╨║╤Г╨╝╨╡╨╜╤В╨╛╨▓ ╨╜╨░ ╨╛╤Б╨╜╨╛╨▓╨╡ ╤И╨░╨▒╨╗╨╛╨╜╨╛╨▓ */
 Import rslx;
 import globals;
 import rcw;
@@ -9,7 +9,7 @@ import "constxml.mac";
 import "boostre.d32";
 import "assarray.d32";
 
-/* проверка терминального макроса */                                                            
+/* ╨┐╤А╨╛╨▓╨╡╤А╨║╨░ ╤В╨╡╤А╨╝╨╕╨╜╨░╨╗╤М╨╜╨╛╨│╨╛ ╨╝╨░╨║╤А╨╛╤Б╨░ */                                                            
 private macro CheckTermTools
     const sMacroName="termtools.mac";
     var src_dt:date, src_tm:time, src_size:integer;
@@ -19,7 +19,7 @@ private macro CheckTermTools
 
     var ErrCode;
     var strTermMacTemplatePath="..\\MAC\\USER_MAC\\.TERMINAL";
-    GetRegistryValue("USER_MAC\\ДИРЕКТОРИИ\\МАКРОСЫ ДЛЯ ТЕРМИНАЛА",V_STRING, strTermMacTemplatePath, ErrCode);
+    GetRegistryValue("USER_MAC\\╨Ф╨Ш╨а╨Х╨Ъ╨в╨Ю╨а╨Ш╨Ш\\╨Ь╨Р╨Ъ╨а╨Ю╨б╨л ╨Ф╨Ы╨п ╨в╨Х╨а╨Ь╨Ш╨Э╨Р╨Ы╨Р",V_STRING, strTermMacTemplatePath, ErrCode);
 
     var strSrcPath=strTermMacTemplatePath+"\\" + sMacroName;
 
@@ -27,11 +27,11 @@ private macro CheckTermTools
         GetFileInfo(strDstPath, @dst_dt, @dst_tm, @dst_size);
         if ((src_dt!=dst_dt) and (src_tm!=dst_tm) or (src_size!=dst_size))
             if (not CopyFile (strSrcPath, strDstPath))
-                MsgBox("Ошибка копирования макроса на терминал");
+                MsgBox("╨Ю╤И╨╕╨▒╨║╨░ ╨║╨╛╨┐╨╕╤А╨╛╨▓╨░╨╜╨╕╤П ╨╝╨░╨║╤А╨╛╤Б╨░ ╨╜╨░ ╤В╨╡╤А╨╝╨╕╨╜╨░╨╗");
             end;
         end;
     else
-        MsgBox("Не найден эталон терминального макроса "+strSrcPath);
+        MsgBox("╨Э╨╡ ╨╜╨░╨╣╨┤╨╡╨╜ ╤Н╤В╨░╨╗╨╛╨╜ ╤В╨╡╤А╨╝╨╕╨╜╨░╨╗╤М╨╜╨╛╨│╨╛ ╨╝╨░╨║╤А╨╛╤Б╨░ "+strSrcPath);
     end;
 end;//macro CheckTermTools 
 
@@ -50,29 +50,42 @@ private macro XML_EscapeSting(s)
     return String(s);
 end; /* macro XML_EscapeSting */
 
-/* базовый класс */
+
+private macro NormalizePath(s)
+    s = StrSubst ( s, strfor(7), "_");
+    s = StrSubst ( s, "", "_");
+    s = StrSubst ( s, "\\", "_");
+    s = StrSubst ( s, "/", "_");
+    s = StrSubst ( s, ":", "_");
+    s = StrSubst ( s, "*", "_");
+    s = StrSubst ( s, "?", "_");
+    return s;
+end;
+
+
+/* ╨▒╨░╨╖╨╛╨▓╤Л╨╣ ╨║╨╗╨░╤Б╤Б */
 class TBaseXmlDoc(strTemplate_)
     var DOMDOC;
     var strFormPath=strTemplate_;
     var strFolder=strTemplate_;
     var strBaseName:String;
     var strWorkDir:String;
-    var bWorkDir:Bool=false; // Флаг что strWorkDir успешно создано. для xls UnZip может вызываться несколько раз
+    var bWorkDir:Bool=false; // ╨д╨╗╨░╨│ ╤З╤В╨╛ strWorkDir ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜╨╛. ╨┤╨╗╤П xls UnZip ╨╝╨╛╨╢╨╡╤В ╨▓╤Л╨╖╤Л╨▓╨░╤В╤М╤Б╤П ╨╜╨╡╤Б╨║╨╛╨╗╤М╨║╨╛ ╤А╨░╨╖
     var strFormFolder:String;
     var strFormName:String;
     var strFormExt:String;
     var Verbose=true; //true;          //!!!
-    var bRemoveOnServer=false;//false; //!!!    /* Удалять промежуточный файл на сервере         */
-    var strTemplate;              /* Путь к файлу шаблона                          */
-    var InitOk;                   /* Флаг успешной инициализации                   */         
-    var strReportName:String;     /* Имя файла отчета, если не заполнится, UID     */
-    var aZipFiles=TArray();       /* Массив имён файлов для распаковки/запаковки   */
-    var AutoOpen:Bool=true;       /* Открывать файл после формирования             */
-    var AutoPrint=false;          /* Флаг автоматической печати на def принтер     */
-    var lastError="";             /* для возвращения сообщений об ошибках          */
-    var domNewRowNode;            /* Объект Образцовая строка                      */
-    var domTableNode;             /* Объект Таблица, если используется             */
-    var bSaveCalled:Bool=false;   /* Флаг вызова метода Save                       */ 
+    var bRemoveOnServer=false;//false; //!!!    /* ╨г╨┤╨░╨╗╤П╤В╤М ╨┐╤А╨╛╨╝╨╡╨╢╤Г╤В╨╛╤З╨╜╤Л╨╣ ╤Д╨░╨╣╨╗ ╨╜╨░ ╤Б╨╡╤А╨▓╨╡╤А╨╡         */
+    var strTemplate;              /* ╨Я╤Г╤В╤М ╨║ ╤Д╨░╨╣╨╗╤Г ╤И╨░╨▒╨╗╨╛╨╜╨░                          */
+    var InitOk;                   /* ╨д╨╗╨░╨│ ╤Г╤Б╨┐╨╡╤И╨╜╨╛╨╣ ╨╕╨╜╨╕╤Ж╨╕╨░╨╗╨╕╨╖╨░╤Ж╨╕╨╕                   */         
+    var strReportName:String;     /* ╨Ш╨╝╤П ╤Д╨░╨╣╨╗╨░ ╨╛╤В╤З╨╡╤В╨░, ╨╡╤Б╨╗╨╕ ╨╜╨╡ ╨╖╨░╨┐╨╛╨╗╨╜╨╕╤В╤Б╤П, UID     */
+    var aZipFiles=TArray();       /* ╨Ь╨░╤Б╤Б╨╕╨▓ ╨╕╨╝╤С╨╜ ╤Д╨░╨╣╨╗╨╛╨▓ ╨┤╨╗╤П ╤А╨░╤Б╨┐╨░╨║╨╛╨▓╨║╨╕/╨╖╨░╨┐╨░╨║╨╛╨▓╨║╨╕   */
+    var AutoOpen:Bool=true;       /* ╨Ю╤В╨║╤А╤Л╨▓╨░╤В╤М ╤Д╨░╨╣╨╗ ╨┐╨╛╤Б╨╗╨╡ ╤Д╨╛╤А╨╝╨╕╤А╨╛╨▓╨░╨╜╨╕╤П             */
+    var AutoPrint=false;          /* ╨д╨╗╨░╨│ ╨░╨▓╤В╨╛╨╝╨░╤В╨╕╤З╨╡╤Б╨║╨╛╨╣ ╨┐╨╡╤З╨░╤В╨╕ ╨╜╨░ def ╨┐╤А╨╕╨╜╤В╨╡╤А     */
+    var lastError="";             /* ╨┤╨╗╤П ╨▓╨╛╨╖╨▓╤А╨░╤Й╨╡╨╜╨╕╤П ╤Б╨╛╨╛╨▒╤Й╨╡╨╜╨╕╨╣ ╨╛╨▒ ╨╛╤И╨╕╨▒╨║╨░╤Е          */
+    var domNewRowNode;            /* ╨Ю╨▒╤К╨╡╨║╤В ╨Ю╨▒╤А╨░╨╖╤Ж╨╛╨▓╨░╤П ╤Б╤В╤А╨╛╨║╨░                      */
+    var domTableNode;             /* ╨Ю╨▒╤К╨╡╨║╤В ╨в╨░╨▒╨╗╨╕╤Ж╨░, ╨╡╤Б╨╗╨╕ ╨╕╤Б╨┐╨╛╨╗╤М╨╖╤Г╨╡╤В╤Б╤П             */
+    var bSaveCalled:Bool=false;   /* ╨д╨╗╨░╨│ ╨▓╤Л╨╖╨╛╨▓╨░ ╨╝╨╡╤В╨╛╨┤╨░ Save                       */ 
 
     macro DebugPrint(s)
         if (Verbose)
@@ -98,7 +111,7 @@ class TBaseXmlDoc(strTemplate_)
         return true;
     end;
 
-    /* Создаёт массив и инициализирует его своими аргументами */
+    /* ╨б╨╛╨╖╨┤╨░╤С╤В ╨╝╨░╤Б╤Б╨╕╨▓ ╨╕ ╨╕╨╜╨╕╤Ж╨╕╨░╨╗╨╕╨╖╨╕╤А╤Г╨╡╤В ╨╡╨│╨╛ ╤Б╨▓╨╛╨╕╨╝╨╕ ╨░╤А╨│╤Г╨╝╨╡╨╜╤В╨░╨╝╨╕ */
     private macro GetArray()
         var aRet=TArray(Parmcount());
         var i:integer;
@@ -138,12 +151,12 @@ class TBaseXmlDoc(strTemplate_)
         var i;
         for (i,1,Parmcount()-1,1)
             GetParm(i, strFileName);
-            aZipFiles[aZipFiles.Size]=strFileName; //запоминаем имена распакованных файлов для последующей запаковки
+            aZipFiles[aZipFiles.Size]=strFileName; //╨╖╨░╨┐╨╛╨╝╨╕╨╜╨░╨╡╨╝ ╨╕╨╝╨╡╨╜╨░ ╤А╨░╤Б╨┐╨░╨║╨╛╨▓╨░╨╜╨╜╤Л╤Е ╤Д╨░╨╣╨╗╨╛╨▓ ╨┤╨╗╤П ╨┐╨╛╤Б╨╗╨╡╨┤╤Г╤О╤Й╨╡╨╣ ╨╖╨░╨┐╨░╨║╨╛╨▓╨║╨╕
 
             strFileName=StrSubst(strFileName,"\\","/"); // in zip folder/folder/folder/file
             iZipErr=izUnzip(strTemplate, strWorkDir+"\\", strFileName);
             if(iZipErr)
-                MsgBox("Ошибка "+String(iZipErr)+" при распаковке файла "+strFileName+" из архива "+strTemplate+" в "+strWorkDir);
+                MsgBox("╨Ю╤И╨╕╨▒╨║╨░ "+String(iZipErr)+" ╨┐╤А╨╕ ╤А╨░╤Б╨┐╨░╨║╨╛╨▓╨║╨╡ ╤Д╨░╨╣╨╗╨░ "+strFileName+" ╨╕╨╖ ╨░╤А╤Е╨╕╨▓╨░ "+strTemplate+" ╨▓ "+strWorkDir);
                 return false;
             end;
         end;
@@ -152,7 +165,7 @@ class TBaseXmlDoc(strTemplate_)
 
     /* */
     onerror(er)
-        msgbox(er.Message + " (строка " + er.line + ")");
+        msgbox(er.Message + " (╤Б╤В╤А╨╛╨║╨░ " + er.line + ")");
         return false;
     /*    */
     end; /* UnZipContent */
@@ -192,10 +205,10 @@ class TBaseXmlDoc(strTemplate_)
     */
 
     macro SetReportName(s)
-        strReportName=s;
+        strReportName=NormalizePath(s);
     end;
 
-    //Для адресов типа A1
+    //╨Ф╨╗╤П ╨░╨┤╤А╨╡╤Б╨╛╨▓ ╤В╨╕╨┐╨░ A1
     macro SplitCellAdrEasy(cellAdr:String,row:@Integer,col:@String)
         const strReCellAdr="^([A-Z]{1,3})(\\d{1,7})$"; 
         var str,strErr;
@@ -238,7 +251,7 @@ class TBaseXmlDoc(strTemplate_)
 
         var zipFilePath=strWorkDir+"\\" +strReportName+strFormExt;
         if (not CopyFile (strTemplate, zipFilePath))
-            lastError="Ошибка копирования "+strTemplate+"->"+zipFilePath;
+            lastError="╨Ю╤И╨╕╨▒╨║╨░ ╨║╨╛╨┐╨╕╤А╨╛╨▓╨░╨╜╨╕╤П "+strTemplate+"->"+zipFilePath;
             DebugPrint(lastError);
             return false;
         end;
@@ -247,7 +260,7 @@ class TBaseXmlDoc(strTemplate_)
         for(strFile, aZipFiles)
             iZipErr=izZip(strReportName+strFormExt, strWorkDir, strFile);
             if(iZipErr)
-                MsgBox("Ошибка " + String(iZipErr) + " при добавлении " + strFile+ " в " + strReportName+strFormExt + " в "+strWorkDir );
+                MsgBox("╨Ю╤И╨╕╨▒╨║╨░ " + String(iZipErr) + " ╨┐╤А╨╕ ╨┤╨╛╨▒╨░╨▓╨╗╨╡╨╜╨╕╨╕ " + strFile+ " ╨▓ " + strReportName+strFormExt + " ╨▓ "+strWorkDir );
                 return false;
             else
                 if (bRemoveOnServer)
@@ -259,21 +272,21 @@ class TBaseXmlDoc(strTemplate_)
 
         var sDstPath; //2015.11.13
         if ((ValType(strTermDst)==V_STRING) and (strTermDst!=""))
-        //считаем, что передан путь и будем сохранять в него
+        //╤Б╤З╨╕╤В╨░╨╡╨╝, ╤З╤В╨╛ ╨┐╨╡╤А╨╡╨┤╨░╨╜ ╨┐╤Г╤В╤М ╨╕ ╨▒╤Г╨┤╨╡╨╝ ╤Б╨╛╤Е╤А╨░╨╜╤П╤В╤М ╨▓ ╨╜╨╡╨│╨╛
             If  (substr(strTermDst, strlen(strTermDst))!= "\\")
                 strTermDst=strTermDst+ "\\";
             End;
             strTermDst=strTermDst+strReportName+strFormExt;
             sDstPath=strTermDst;
         else
-        //считаем, что путь не передан. копируем на терминал
-            //при копировании файлов на терминал они попадают в папку 
+        //╤Б╤З╨╕╤В╨░╨╡╨╝, ╤З╤В╨╛ ╨┐╤Г╤В╤М ╨╜╨╡ ╨┐╨╡╤А╨╡╨┤╨░╨╜. ╨║╨╛╨┐╨╕╤А╤Г╨╡╨╝ ╨╜╨░ ╤В╨╡╤А╨╝╨╕╨╜╨░╨╗
+            //╨┐╤А╨╕ ╨║╨╛╨┐╨╕╤А╨╛╨▓╨░╨╜╨╕╨╕ ╤Д╨░╨╣╨╗╨╛╨▓ ╨╜╨░ ╤В╨╡╤А╨╝╨╕╨╜╨░╨╗ ╨╛╨╜╨╕ ╨┐╨╛╨┐╨░╨┤╨░╤О╤В ╨▓ ╨┐╨░╨┐╨║╤Г 
             CheckTermTools();
             strTermDst=CallRemoteRsl ("termtools.mac", "GetIniString", "UPDIR",".\\RSEXTT.INI");
             if ((strTermDst!="") and (SubStr(strTermDst,StrLen(strTermDst))!="\\"))
                 strTermDst=strTermDst+"\\";
             end;
-            /* Копирование на терминал */
+            /* ╨Ъ╨╛╨┐╨╕╤А╨╛╨▓╨░╨╜╨╕╨╡ ╨╜╨░ ╤В╨╡╤А╨╝╨╕╨╜╨░╨╗ */
             strTermDst=strTermDst+strReportName+strFormExt;
             sDstPath="$"+strTermDst;
         end;
@@ -283,10 +296,10 @@ class TBaseXmlDoc(strTemplate_)
                RemoveFile(zipFilePath);
                RemoveDir(strWorkDir);
             end;
-            //DebugPrint("Файл перемещен на терминал");
+            //DebugPrint("╨д╨░╨╣╨╗ ╨┐╨╡╤А╨╡╨╝╨╡╤Й╨╡╨╜ ╨╜╨░ ╤В╨╡╤А╨╝╨╕╨╜╨░╨╗");
             return true;
         else
-            lastError="Ошибка переноса " + zipFilePath + " -> " + sDstPath;
+            lastError="╨Ю╤И╨╕╨▒╨║╨░ ╨┐╨╡╤А╨╡╨╜╨╛╤Б╨░ " + zipFilePath + " -> " + sDstPath;
             DebugPrint(lastError);
         end;
         return false;
@@ -319,27 +332,27 @@ end; //class TBaseXmlDoc
 class (TBaseXmlDoc) TOpenDocForm(strFormPath_)
     //var DOMDOC;
     //var strFolder=strFormPath;
-    //var strBaseName:String;       /* Имя отчета, длинная бестолковая фигня         */
-    var strDefTableName="Таблица1";/* Имя таблицы                                   */
-    var strTableName;             /* Имя таблицы                                   */
-    var iTableFooterRows=0;       /* Строк в хвосте таблицы после строки-образца, 
-                                    если они есть надо проинициализировать до вызова таблицы  */
-    //var domNewRowNode;            /* Объект Образцовая строка                      */
-    var iRow;                     /* Содержит счетчик строк в текущей Таблице      */
-    var domRow;                   /* Временная переменная для сохранения ссылки    */ 
-                                  /* на строку в Таблице которая будет заполняться */
-    var Printer;                  /* Принтер для печати, отличный от умолчального  */
-    var strSectionName="Раздел1"; /* Имя раздела-шаблона                           */
-    var strSectionBaseName:String;/* Имя раздела-шаблона                           */
-    var domSectionNode;           /* Объект раздел, если используется              */
-    var domSectionNewNode;        /* Объект раздел-шаблон                          */
-    var iSection=0;               /* Счётчик разделов                              */
-    var aSectionFields;           /* Названия полей, зависимых от раздела          */
+    //var strBaseName:String;       /* ╨Ш╨╝╤П ╨╛╤В╤З╨╡╤В╨░, ╨┤╨╗╨╕╨╜╨╜╨░╤П ╨▒╨╡╤Б╤В╨╛╨╗╨║╨╛╨▓╨░╤П ╤Д╨╕╨│╨╜╤П         */
+    var strDefTableName="╨в╨░╨▒╨╗╨╕╤Ж╨░1";/* ╨Ш╨╝╤П ╤В╨░╨▒╨╗╨╕╤Ж╤Л                                   */
+    var strTableName;             /* ╨Ш╨╝╤П ╤В╨░╨▒╨╗╨╕╤Ж╤Л                                   */
+    var iTableFooterRows=0;       /* ╨б╤В╤А╨╛╨║ ╨▓ ╤Е╨▓╨╛╤Б╤В╨╡ ╤В╨░╨▒╨╗╨╕╤Ж╤Л ╨┐╨╛╤Б╨╗╨╡ ╤Б╤В╤А╨╛╨║╨╕-╨╛╨▒╤А╨░╨╖╤Ж╨░, 
+                                    ╨╡╤Б╨╗╨╕ ╨╛╨╜╨╕ ╨╡╤Б╤В╤М ╨╜╨░╨┤╨╛ ╨┐╤А╨╛╨╕╨╜╨╕╤Ж╨╕╨░╨╗╨╕╨╖╨╕╤А╨╛╨▓╨░╤В╤М ╨┤╨╛ ╨▓╤Л╨╖╨╛╨▓╨░ ╤В╨░╨▒╨╗╨╕╤Ж╤Л  */
+    //var domNewRowNode;            /* ╨Ю╨▒╤К╨╡╨║╤В ╨Ю╨▒╤А╨░╨╖╤Ж╨╛╨▓╨░╤П ╤Б╤В╤А╨╛╨║╨░                      */
+    var iRow;                     /* ╨б╨╛╨┤╨╡╤А╨╢╨╕╤В ╤Б╤З╨╡╤В╤З╨╕╨║ ╤Б╤В╤А╨╛╨║ ╨▓ ╤В╨╡╨║╤Г╤Й╨╡╨╣ ╨в╨░╨▒╨╗╨╕╤Ж╨╡      */
+    var domRow;                   /* ╨Т╤А╨╡╨╝╨╡╨╜╨╜╨░╤П ╨┐╨╡╤А╨╡╨╝╨╡╨╜╨╜╨░╤П ╨┤╨╗╤П ╤Б╨╛╤Е╤А╨░╨╜╨╡╨╜╨╕╤П ╤Б╤Б╤Л╨╗╨║╨╕    */ 
+                                  /* ╨╜╨░ ╤Б╤В╤А╨╛╨║╤Г ╨▓ ╨в╨░╨▒╨╗╨╕╤Ж╨╡ ╨║╨╛╤В╨╛╤А╨░╤П ╨▒╤Г╨┤╨╡╤В ╨╖╨░╨┐╨╛╨╗╨╜╤П╤В╤М╤Б╤П */
+    var Printer;                  /* ╨Я╤А╨╕╨╜╤В╨╡╤А ╨┤╨╗╤П ╨┐╨╡╤З╨░╤В╨╕, ╨╛╤В╨╗╨╕╤З╨╜╤Л╨╣ ╨╛╤В ╤Г╨╝╨╛╨╗╤З╨░╨╗╤М╨╜╨╛╨│╨╛  */
+    var strSectionName="╨а╨░╨╖╨┤╨╡╨╗1"; /* ╨Ш╨╝╤П ╤А╨░╨╖╨┤╨╡╨╗╨░-╤И╨░╨▒╨╗╨╛╨╜╨░                           */
+    var strSectionBaseName:String;/* ╨Ш╨╝╤П ╤А╨░╨╖╨┤╨╡╨╗╨░-╤И╨░╨▒╨╗╨╛╨╜╨░                           */
+    var domSectionNode;           /* ╨Ю╨▒╤К╨╡╨║╤В ╤А╨░╨╖╨┤╨╡╨╗, ╨╡╤Б╨╗╨╕ ╨╕╤Б╨┐╨╛╨╗╤М╨╖╤Г╨╡╤В╤Б╤П              */
+    var domSectionNewNode;        /* ╨Ю╨▒╤К╨╡╨║╤В ╤А╨░╨╖╨┤╨╡╨╗-╤И╨░╨▒╨╗╨╛╨╜                          */
+    var iSection=0;               /* ╨б╤З╤С╤В╤З╨╕╨║ ╤А╨░╨╖╨┤╨╡╨╗╨╛╨▓                              */
+    var aSectionFields;           /* ╨Э╨░╨╖╨▓╨░╨╜╨╕╤П ╨┐╨╛╨╗╨╡╨╣, ╨╖╨░╨▓╨╕╤Б╨╕╨╝╤Л╤Е ╨╛╤В ╤А╨░╨╖╨┤╨╡╨╗╨░          */
     /* var domUserFieldDecl;         /* */*/
 
 
 
-    /* Является ли данная переменная зависимой от контекста раздела */
+    /* ╨п╨▓╨╗╤П╨╡╤В╤Б╤П ╨╗╨╕ ╨┤╨░╨╜╨╜╨░╤П ╨┐╨╡╤А╨╡╨╝╨╡╨╜╨╜╨░╤П ╨╖╨░╨▓╨╕╤Б╨╕╨╝╨╛╨╣ ╨╛╤В ╨║╨╛╨╜╤В╨╡╨║╤Б╤В╨░ ╤А╨░╨╖╨┤╨╡╨╗╨░ */
     macro IsSectionField(strFieldName)
         return InArray(aSectionFields,strFieldName)
     end; /* macro IsSectionField */
@@ -375,7 +388,7 @@ class (TBaseXmlDoc) TOpenDocForm(strFormPath_)
 
         if (IsSectionField(strFieldName))
             if (iSection==0)
-                MsgBox("Попытка установить зависящую от раздела переменную "+strFieldName+" вне контекста раздела");
+                MsgBox("╨Я╨╛╨┐╤Л╤В╨║╨░ ╤Г╤Б╤В╨░╨╜╨╛╨▓╨╕╤В╤М ╨╖╨░╨▓╨╕╤Б╤П╤Й╤Г╤О ╨╛╤В ╤А╨░╨╖╨┤╨╡╨╗╨░ ╨┐╨╡╤А╨╡╨╝╨╡╨╜╨╜╤Г╤О "+strFieldName+" ╨▓╨╜╨╡ ╨║╨╛╨╜╤В╨╡╨║╤Б╤В╨░ ╤А╨░╨╖╨┤╨╡╨╗╨░");
                 return false;
             end;
             strFieldName=domSectionNode.getAttribute("text:name")+"_"+strFieldName;
@@ -385,7 +398,7 @@ class (TBaseXmlDoc) TOpenDocForm(strFormPath_)
         DebugPrint(strXPath);
         domNodes=DOMDoc.documentElement.selectNodes(strXPath);
         if (domNodes.length==0)
-            lastError="В шаблоне поле "+strFieldName+" не найдено ";
+            lastError="╨Т ╤И╨░╨▒╨╗╨╛╨╜╨╡ ╨┐╨╛╨╗╨╡ "+strFieldName+" ╨╜╨╡ ╨╜╨░╨╣╨┤╨╡╨╜╨╛ ";
             DebugPrint(lastError);
             if (AutoOpen)
                 MsgBox(lastError);
@@ -416,8 +429,8 @@ class (TBaseXmlDoc) TOpenDocForm(strFormPath_)
 
         domNode.setAttribute(strXmlType, v);
 
-        //20151116 Если не менять по всему тексту, то LibreOffice открывает нормально, 
-        //но M$Word не обновляет, поэтому находим все вхождения поля и меняем
+        //20151116 ╨Х╤Б╨╗╨╕ ╨╜╨╡ ╨╝╨╡╨╜╤П╤В╤М ╨┐╨╛ ╨▓╤Б╨╡╨╝╤Г ╤В╨╡╨║╤Б╤В╤Г, ╤В╨╛ LibreOffice ╨╛╤В╨║╤А╤Л╨▓╨░╨╡╤В ╨╜╨╛╤А╨╝╨░╨╗╤М╨╜╨╛, 
+        //╨╜╨╛ M$Word ╨╜╨╡ ╨╛╨▒╨╜╨╛╨▓╨╗╤П╨╡╤В, ╨┐╨╛╤Н╤В╨╛╨╝╤Г ╨╜╨░╤Е╨╛╨┤╨╕╨╝ ╨▓╤Б╨╡ ╨▓╤Е╨╛╨╢╨┤╨╡╨╜╨╕╤П ╨┐╨╛╨╗╤П ╨╕ ╨╝╨╡╨╜╤П╨╡╨╝
         strXPath="//text:user-field-get[@text:name='"+strFieldName+"']";
         DebugPrint(strXPath);
         domNodes=DOMDoc.documentElement.selectNodes(strXPath);
@@ -427,7 +440,7 @@ class (TBaseXmlDoc) TOpenDocForm(strFormPath_)
         end;
 
         onerror(er)
-            msgbox(er.Message + " (строка " + er.line + ")|"+"Ошибка установки значения ["+String(v)+"]| поля ["+strFieldName+"]");
+            msgbox(er.Message + " (╤Б╤В╤А╨╛╨║╨░ " + er.line + ")|"+"╨Ю╤И╨╕╨▒╨║╨░ ╤Г╤Б╤В╨░╨╜╨╛╨▓╨║╨╕ ╨╖╨╜╨░╤З╨╡╨╜╨╕╤П ["+String(v)+"]| ╨┐╨╛╨╗╤П ["+strFieldName+"]");
             return false;
     end; /* macro SetField */
 
@@ -440,7 +453,7 @@ class (TBaseXmlDoc) TOpenDocForm(strFormPath_)
 
         domNodes=DOMDoc.documentElement.selectNodes("//text:variable-set[@text:name='"+strFieldName+"']");
         if (domNodes.length==0)
-            MsgBox("В шаблоне переменная "+strFieldName+" не найдена ");
+            MsgBox("╨Т ╤И╨░╨▒╨╗╨╛╨╜╨╡ ╨┐╨╡╤А╨╡╨╝╨╡╨╜╨╜╨░╤П "+strFieldName+" ╨╜╨╡ ╨╜╨░╨╣╨┤╨╡╨╜╨░ ");
             return false;
         end;
         domNode=domNodes.Item(0);
@@ -470,7 +483,7 @@ class (TBaseXmlDoc) TOpenDocForm(strFormPath_)
         var strTermDst:String;
 
         if ((ValType(sDestFolder)==V_STRING) and (sDestFolder!=""))
-        //режим введён для массового безинтерфейсного формирования файлов     
+        //╤А╨╡╨╢╨╕╨╝ ╨▓╨▓╨╡╨┤╤С╨╜ ╨┤╨╗╤П ╨╝╨░╤Б╤Б╨╛╨▓╨╛╨│╨╛ ╨▒╨╡╨╖╨╕╨╜╤В╨╡╤А╤Д╨╡╨╣╤Б╨╜╨╛╨│╨╛ ╤Д╨╛╤А╨╝╨╕╤А╨╛╨▓╨░╨╜╨╕╤П ╤Д╨░╨╣╨╗╨╛╨▓     
             var sPath=sDestFolder;
             if (DocSave(@sPath))
                 return sPath;
@@ -482,12 +495,12 @@ class (TBaseXmlDoc) TOpenDocForm(strFormPath_)
                 var strArgs:String;
                 strArgs=strTermDst;
                 if (AutoPrint)
-                //печать
+                //╨┐╨╡╤З╨░╤В╤М
                     if ((ValType(Printer)!=V_UNDEF) and (Printer!=""))
-                        //на указанный принтер
+                        //╨╜╨░ ╤Г╨║╨░╨╖╨░╨╜╨╜╤Л╨╣ ╨┐╤А╨╕╨╜╤В╨╡╤А
                         strArgs="-pt " +Printer+ " "+ strArgs;
                     else
-                        //на принтер по умолчанию
+                        //╨╜╨░ ╨┐╤А╨╕╨╜╤В╨╡╤А ╨┐╨╛ ╤Г╨╝╨╛╨╗╤З╨░╨╜╨╕╤О
                         strArgs="-p" + strArgs;
                     end;
                 end;
@@ -501,7 +514,7 @@ class (TBaseXmlDoc) TOpenDocForm(strFormPath_)
 
 
 
-    /* Инициализация таблицы для вывода */
+    /* ╨Ш╨╜╨╕╤Ж╨╕╨░╨╗╨╕╨╖╨░╤Ж╨╕╤П ╤В╨░╨▒╨╗╨╕╤Ж╤Л ╨┤╨╗╤П ╨▓╤Л╨▓╨╛╨┤╨░ */
     macro Table(sParamName)
         var strXPath:String;
         var domNodes;
@@ -516,8 +529,8 @@ class (TBaseXmlDoc) TOpenDocForm(strFormPath_)
 
         /**/
         if  (ValType(domSectionNewNode)!=V_UNDEF)
-        /* Если определён раздел-шаблон, то ищем в нём, если находим, 
-           то это повторяющаяся таблица и к её имени надо приписывать имя раздела */
+        /* ╨Х╤Б╨╗╨╕ ╨╛╨┐╤А╨╡╨┤╨╡╨╗╤С╨╜ ╤А╨░╨╖╨┤╨╡╨╗-╤И╨░╨▒╨╗╨╛╨╜, ╤В╨╛ ╨╕╤Й╨╡╨╝ ╨▓ ╨╜╤С╨╝, ╨╡╤Б╨╗╨╕ ╨╜╨░╤Е╨╛╨┤╨╕╨╝, 
+           ╤В╨╛ ╤Н╤В╨╛ ╨┐╨╛╨▓╤В╨╛╤А╤П╤О╤Й╨░╤П╤Б╤П ╤В╨░╨▒╨╗╨╕╤Ж╨░ ╨╕ ╨║ ╨╡╤С ╨╕╨╝╨╡╨╜╨╕ ╨╜╨░╨┤╨╛ ╨┐╤А╨╕╨┐╨╕╤Б╤Л╨▓╨░╤В╤М ╨╕╨╝╤П ╤А╨░╨╖╨┤╨╡╨╗╨░ */
             DebugPrint("Table: section detected");
             strXPath=".//table:table[@table:name='"+strTableName+"']";
             DebugPrint(strXPath);
@@ -534,7 +547,7 @@ class (TBaseXmlDoc) TOpenDocForm(strFormPath_)
         DebugPrint(strXPath);
         domNodes=DOMDoc.documentElement.selectNodes(strXPath);
         if (domNodes.length==0)
-            MsgBox("В шаблоне не найдено таблицы "+strTableName+"");
+            MsgBox("╨Т ╤И╨░╨▒╨╗╨╛╨╜╨╡ ╨╜╨╡ ╨╜╨░╨╣╨┤╨╡╨╜╨╛ ╤В╨░╨▒╨╗╨╕╤Ж╤Л "+strTableName+"");
             return false;
         end;
         domTableNode=domNodes.Item(0);
@@ -552,8 +565,8 @@ class (TBaseXmlDoc) TOpenDocForm(strFormPath_)
         iRow=0;
     end; /* macro Table */
 
-    /* Записать переданный массив как строку ранее опрделённой таблицы см. Table() */
-    /* 08.08.2016 Можно передавать массив, а можно список аргументов               */
+    /* ╨Ч╨░╨┐╨╕╤Б╨░╤В╤М ╨┐╨╡╤А╨╡╨┤╨░╨╜╨╜╤Л╨╣ ╨╝╨░╤Б╤Б╨╕╨▓ ╨║╨░╨║ ╤Б╤В╤А╨╛╨║╤Г ╤А╨░╨╜╨╡╨╡ ╨╛╨┐╤А╨┤╨╡╨╗╤С╨╜╨╜╨╛╨╣ ╤В╨░╨▒╨╗╨╕╤Ж╤Л ╤Б╨╝. Table() */
+    /* 08.08.2016 ╨Ь╨╛╨╢╨╜╨╛ ╨┐╨╡╤А╨╡╨┤╨░╨▓╨░╤В╤М ╨╝╨░╤Б╤Б╨╕╨▓, ╨░ ╨╝╨╛╨╢╨╜╨╛ ╤Б╨┐╨╕╤Б╨╛╨║ ╨░╤А╨│╤Г╨╝╨╡╨╜╤В╨╛╨▓               */
     macro WriteRow(ar)
         var strXPath:String;
         var i:Integer;
@@ -583,7 +596,7 @@ class (TBaseXmlDoc) TOpenDocForm(strFormPath_)
             domCell=domRow.selectNodes(strXPath).Item(0);
             if (ValType(domCell)==V_UNDEF)
                 DebugPrint("ERROR: Can not find "+strXPath);
-                lastError="Возможно, количество столбцов в таблице шаблона меньше количества передаваемых значений";
+                lastError="╨Т╨╛╨╖╨╝╨╛╨╢╨╜╨╛, ╨║╨╛╨╗╨╕╤З╨╡╤Б╤В╨▓╨╛ ╤Б╤В╨╛╨╗╨▒╤Ж╨╛╨▓ ╨▓ ╤В╨░╨▒╨╗╨╕╤Ж╨╡ ╤И╨░╨▒╨╗╨╛╨╜╨░ ╨╝╨╡╨╜╤М╤И╨╡ ╨║╨╛╨╗╨╕╤З╨╡╤Б╤В╨▓╨░ ╨┐╨╡╤А╨╡╨┤╨░╨▓╨░╨╡╨╝╤Л╤Е ╨╖╨╜╨░╤З╨╡╨╜╨╕╨╣";
             else
                 //DebugPrint(strXPath + " " + domCell.nodeName);
                 if (pc)
@@ -613,11 +626,11 @@ class (TBaseXmlDoc) TOpenDocForm(strFormPath_)
     end; /* macro SetSectionBaseName */
 
     private macro SectionRename
-        /* <text:section text:name="Шублон" text:style-name="Sect1"> */
+        /* <text:section text:name="╨и╤Г╨▒╨╗╨╛╨╜" text:style-name="Sect1"> */
         domSectionNode.setAttribute("text:name")=strSectionBaseName+String(iSection);
     end; /* macro SectionRename */
 
-    /* определяет раздел-шаблон */
+    /* ╨╛╨┐╤А╨╡╨┤╨╡╨╗╤П╨╡╤В ╤А╨░╨╖╨┤╨╡╨╗-╤И╨░╨▒╨╗╨╛╨╜ */
     macro Section(sParamName)
         var strXPath:String;
 
@@ -627,7 +640,7 @@ class (TBaseXmlDoc) TOpenDocForm(strFormPath_)
             strSectionName=sParamName;
         end;
 
-        /* <text:section text:name="Шублон" text:style-name="Sect1"> */
+        /* <text:section text:name="╨и╤Г╨▒╨╗╨╛╨╜" text:style-name="Sect1"> */
         strXPath="//text:section[@text:name='"+strSectionName+"']";
         domSectionNode=DOMDoc.documentElement.selectNodes(strXPath).Item(0);
         DebugPrint(domSectionNode.nodeName);
@@ -636,7 +649,7 @@ class (TBaseXmlDoc) TOpenDocForm(strFormPath_)
         SetSectionBaseName();
     end; /* macro Section */
 
-    /* копирует ранее определённый раздел-шаблон */
+    /* ╨║╨╛╨┐╨╕╤А╤Г╨╡╤В ╤А╨░╨╜╨╡╨╡ ╨╛╨┐╤А╨╡╨┤╨╡╨╗╤С╨╜╨╜╤Л╨╣ ╤А╨░╨╖╨┤╨╡╨╗-╤И╨░╨▒╨╗╨╛╨╜ */
     macro SectionNew()
         if (ValType(domSectionNewNode)==V_UNDEF)
             return false;
@@ -645,8 +658,8 @@ class (TBaseXmlDoc) TOpenDocForm(strFormPath_)
         domSectionNode=domSectionInsertedNode;
     end; /* macro SectionNew() */
 
-    /* для таблиц внутри раздела добаввляет спереди имя раздела */
-    private macro SectionTableRename
+    /* ╨┤╨╗╤П ╤В╨░╨▒╨╗╨╕╤Ж ╨▓╨╜╤Г╤В╤А╨╕ ╤А╨░╨╖╨┤╨╡╨╗╨░ ╨┤╨╛╨▒╨░╨▓╨▓╨╗╤П╨╡╤В ╤Б╨┐╨╡╤А╨╡╨┤╨╕ ╨╕╨╝╤П ╤А╨░╨╖╨┤╨╡╨╗╨░ */
+    macro SectionTableRename()
         var strXPath="table:table";
         var domSectionTables=domSectionNode.selectNodes(strXPath);
         var i;
@@ -669,7 +682,7 @@ class (TBaseXmlDoc) TOpenDocForm(strFormPath_)
     end;
 
 
-    /* изменяет названия пользовательских полей в контексте раздела */
+    /* ╨╕╨╖╨╝╨╡╨╜╤П╨╡╤В ╨╜╨░╨╖╨▓╨░╨╜╨╕╤П ╨┐╨╛╨╗╤М╨╖╨╛╨▓╨░╤В╨╡╨╗╤М╤Б╨║╨╕╤Е ╨┐╨╛╨╗╨╡╨╣ ╨▓ ╨║╨╛╨╜╤В╨╡╨║╤Б╤В╨╡ ╤А╨░╨╖╨┤╨╡╨╗╨░ */
     private macro SectionFieldsRename()
         if (not IsEqClass ("TArray", aSectionFields))    
             return false; 
@@ -697,13 +710,13 @@ class (TBaseXmlDoc) TOpenDocForm(strFormPath_)
     end; /* macro SectionFieldsRename */
 
 
-    /* вызывать в начале тела цикла вывода раздела */
+    /* ╨▓╤Л╨╖╤Л╨▓╨░╤В╤М ╨▓ ╨╜╨░╤З╨░╨╗╨╡ ╤В╨╡╨╗╨░ ╤Ж╨╕╨║╨╗╨░ ╨▓╤Л╨▓╨╛╨┤╨░ ╤А╨░╨╖╨┤╨╡╨╗╨░ */
     macro SectionAdd
         if (0==iSection)
-        /* первый раздел. используется тот, что есть */
+        /* ╨┐╨╡╤А╨▓╤Л╨╣ ╤А╨░╨╖╨┤╨╡╨╗. ╨╕╤Б╨┐╨╛╨╗╤М╨╖╤Г╨╡╤В╤Б╤П ╤В╨╛╤В, ╤З╤В╨╛ ╨╡╤Б╤В╤М */
             iSection=1;
         else
-        /* не первый раздел. вставляется новый       */
+        /* ╨╜╨╡ ╨┐╨╡╤А╨▓╤Л╨╣ ╤А╨░╨╖╨┤╨╡╨╗. ╨▓╤Б╤В╨░╨▓╨╗╤П╨╡╤В╤Б╤П ╨╜╨╛╨▓╤Л╨╣       */
             SectionNew();
             iSection=iSection+1;
         end;
@@ -749,7 +762,7 @@ class (TBaseXmlDoc) TMsDocForm(strFormPath_)
         DOMDoc.setProperty("SelectionLanguage",   "XPath");
         DOMDoc.setProperty("SelectionNamespaces", "xmlns:ve='http://schemas.openxmlformats.org/markup-compatibility/2006' xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:r='http://schemas.openxmlformats.org/officeDocument/2006/relationships' xmlns:m='http://schemas.openxmlformats.org/officeDocument/2006/math' xmlns:v='urn:schemas-microsoft-com:vml' xmlns:wp='http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing' xmlns:w10='urn:schemas-microsoft-com:office:word' xmlns:w='http://schemas.openxmlformats.org/wordprocessingml/2006/main' xmlns:wne='http://schemas.microsoft.com/office/word/2006/wordml'");
 
-        //для M$Word нужен ещё один файл
+        //╨┤╨╗╤П M$Word ╨╜╤Г╨╢╨╡╨╜ ╨╡╤Й╤С ╨╛╨┤╨╕╨╜ ╤Д╨░╨╣╨╗
         domSettings = ActiveX("MSXML.DOMDocument");
         domSettings.async = False;
         if (not LoadXml(domSettings, "word\\settings.xml"))
@@ -762,7 +775,7 @@ class (TBaseXmlDoc) TMsDocForm(strFormPath_)
     end; /* macro Init */
 
 
-    //Возвращает атрибут для сложного поля или пусто
+    //╨Т╨╛╨╖╨▓╤А╨░╤Й╨░╨╡╤В ╨░╤В╤А╨╕╨▒╤Г╤В ╨┤╨╗╤П ╤Б╨╗╨╛╨╢╨╜╨╛╨│╨╛ ╨┐╨╛╨╗╤П ╨╕╨╗╨╕ ╨┐╤Г╤Б╤В╨╛
     private macro GetFieldPart(domNode)  
         var domNodes=domNode.GetElementsByTagName("w:fldChar");
         if (domNodes.length>0)
@@ -795,7 +808,7 @@ class (TBaseXmlDoc) TMsDocForm(strFormPath_)
 
         var j:Integer, iSubFld:Integer=0;
         var domNewNode, domNode;
-        var strXPath="following-sibling::w:r[w:fldChar/@w:fldCharType='separate'][1]";   //првый снизу separate от найденного поля
+        var strXPath="following-sibling::w:r[w:fldChar/@w:fldCharType='separate'][1]";   //╨┐╤А╨▓╤Л╨╣ ╤Б╨╜╨╕╨╖╤Г separate ╨╛╤В ╨╜╨░╨╣╨┤╨╡╨╜╨╜╨╛╨│╨╛ ╨┐╨╛╨╗╤П
         var domNodesBegin;
         var domNodesSeparate=topNode.selectNodes(strXPath);
         var flagValueSet=false;
@@ -820,7 +833,7 @@ class (TBaseXmlDoc) TMsDocForm(strFormPath_)
                         if (SubStr(nodeText.text,2,Strlen(nodeText.text)-2)==nameField)
                             nodeText.text=v;
                             break;
-                        else // текущее значение может быть рабито на рейнджи. первое ставим, остальные удаляем
+                        else // ╤В╨╡╨║╤Г╤Й╨╡╨╡ ╨╖╨╜╨░╤З╨╡╨╜╨╕╨╡ ╨╝╨╛╨╢╨╡╤В ╨▒╤Л╤В╤М ╤А╨░╨▒╨╕╤В╨╛ ╨╜╨░ ╤А╨╡╨╣╨╜╨┤╨╢╨╕. ╨┐╨╡╤А╨▓╨╛╨╡ ╤Б╤В╨░╨▓╨╕╨╝, ╨╛╤Б╤В╨░╨╗╤М╨╜╤Л╨╡ ╤Г╨┤╨░╨╗╤П╨╡╨╝
                             if (flagValueSet)
                                 domNodesBegin.item(j).parentNode.removeChild(domNodesBegin.item(j));
                             else
@@ -849,7 +862,7 @@ class (TBaseXmlDoc) TMsDocForm(strFormPath_)
         var nodeSeparate; //<w:r w:rsidR="..."><w:fldChar w:fldCharType="separate"/>
         var nodeFildValue;
 
-        //Возвращает атрибут для сложного поля или пусто
+        //╨Т╨╛╨╖╨▓╤А╨░╤Й╨░╨╡╤В ╨░╤В╤А╨╕╨▒╤Г╤В ╨┤╨╗╤П ╤Б╨╗╨╛╨╢╨╜╨╛╨│╨╛ ╨┐╨╛╨╗╤П ╨╕╨╗╨╕ ╨┐╤Г╤Б╤В╨╛
         macro GetFieldPart(domNode)  
             var domNodes=domNode.GetElementsByTagName("w:fldChar");
             if (domNodes.length>0)
@@ -860,7 +873,7 @@ class (TBaseXmlDoc) TMsDocForm(strFormPath_)
 
         if (not InitOk) return false; end;
 
-        // 1. Установка значения поля в Settings
+        // 1. ╨г╤Б╤В╨░╨╜╨╛╨▓╨║╨░ ╨╖╨╜╨░╤З╨╡╨╜╨╕╤П ╨┐╨╛╨╗╤П ╨▓ Settings
         strXPath="//w:docVar[@w:name='"+strFieldName+"']";
         DebugPrint(strXPath);
         domNodes=domSettings.documentElement.selectNodes(strXPath);
@@ -878,7 +891,7 @@ class (TBaseXmlDoc) TMsDocForm(strFormPath_)
             domNode=domParent.appendChild(domNewNode);
             domNode.setAttribute("w:name", strFieldName);
         //
-            //MsgBox("В шаблоне поле "+strFieldName+" не найдено ");
+            //MsgBox("╨Т ╤И╨░╨▒╨╗╨╛╨╜╨╡ ╨┐╨╛╨╗╨╡ "+strFieldName+" ╨╜╨╡ ╨╜╨░╨╣╨┤╨╡╨╜╨╛ ");
             //return false;
         else
             domNode=domNodes.Item(0);
@@ -886,12 +899,12 @@ class (TBaseXmlDoc) TMsDocForm(strFormPath_)
         domNode.setAttribute("w:val", v);
 
         if  (modeFieldChange>0)
-            // 2. Установка значения поля в Document
-            // Если ничего не делать с документом, то при открытии поля будут "старые" и только после Cltr-A F9 они обновятся
+            // 2. ╨г╤Б╤В╨░╨╜╨╛╨▓╨║╨░ ╨╖╨╜╨░╤З╨╡╨╜╨╕╤П ╨┐╨╛╨╗╤П ╨▓ Document
+            // ╨Х╤Б╨╗╨╕ ╨╜╨╕╤З╨╡╨│╨╛ ╨╜╨╡ ╨┤╨╡╨╗╨░╤В╤М ╤Б ╨┤╨╛╨║╤Г╨╝╨╡╨╜╤В╨╛╨╝, ╤В╨╛ ╨┐╤А╨╕ ╨╛╤В╨║╤А╤Л╤В╨╕╨╕ ╨┐╨╛╨╗╤П ╨▒╤Г╨┤╤Г╤В "╤Б╤В╨░╤А╤Л╨╡" ╨╕ ╤В╨╛╨╗╤М╨║╨╛ ╨┐╨╛╤Б╨╗╨╡ Cltr-A F9 ╨╛╨╜╨╕ ╨╛╨▒╨╜╨╛╨▓╤П╤В╤Б╤П
             strXPath="//w:r[starts-with(normalize-space(w:instrText),'DOCVARIABLE "+strFieldName+" ' ) or normalize-space(w:instrText)='DOCVARIABLE "+strFieldName+"']";
             //DebugPrint(strXPath);
-            //пока выбираем упрощённый вариант, инвалидиуем поля. в этом случае ворд при открытии будет спрашивать обновить? скажем ему да и поля обновятся
-            //в будущем надо переписать на замену куска DOM см. http://officeopenxml.com/WPfields.php
+            //╨┐╨╛╨║╨░ ╨▓╤Л╨▒╨╕╤А╨░╨╡╨╝ ╤Г╨┐╤А╨╛╤Й╤С╨╜╨╜╤Л╨╣ ╨▓╨░╤А╨╕╨░╨╜╤В, ╨╕╨╜╨▓╨░╨╗╨╕╨┤╨╕╤Г╨╡╨╝ ╨┐╨╛╨╗╤П. ╨▓ ╤Н╤В╨╛╨╝ ╤Б╨╗╤Г╤З╨░╨╡ ╨▓╨╛╤А╨┤ ╨┐╤А╨╕ ╨╛╤В╨║╤А╤Л╤В╨╕╨╕ ╨▒╤Г╨┤╨╡╤В ╤Б╨┐╤А╨░╤И╨╕╨▓╨░╤В╤М ╨╛╨▒╨╜╨╛╨▓╨╕╤В╤М? ╤Б╨║╨░╨╢╨╡╨╝ ╨╡╨╝╤Г ╨┤╨░ ╨╕ ╨┐╨╛╨╗╤П ╨╛╨▒╨╜╨╛╨▓╤П╤В╤Б╤П
+            //╨▓ ╨▒╤Г╨┤╤Г╤Й╨╡╨╝ ╨╜╨░╨┤╨╛ ╨┐╨╡╤А╨╡╨┐╨╕╤Б╨░╤В╤М ╨╜╨░ ╨╖╨░╨╝╨╡╨╜╤Г ╨║╤Г╤Б╨║╨░ DOM ╤Б╨╝. http://officeopenxml.com/WPfields.php
             var domNodesBegin;
             var domNodesSeparate;
             domNodes=domDoc.documentElement.selectNodes(strXPath);
@@ -899,14 +912,14 @@ class (TBaseXmlDoc) TMsDocForm(strFormPath_)
             for (i, 0, domNodes.length-1, 1)
                 iSubFld=0;
                 if(1==modeFieldChange)
-                    strXPath="preceding-sibling::w:r/w:fldChar[@w:fldCharType='begin' and last()]";  //последний 
+                    strXPath="preceding-sibling::w:r/w:fldChar[@w:fldCharType='begin' and last()]";  //╨┐╨╛╤Б╨╗╨╡╨┤╨╜╨╕╨╣ 
                     domNodesBegin=domNodes.item(i).selectNodes(strXPath);
                     for (j, 0, domNodesBegin.length-1, 1)
                         domNodesBegin.item(j).setAttribute("w:dirty","true");
                     end; //for j
                 elif(2==modeFieldChange) 
                     //strXPath="following-sibling::";
-                    strXPath="following-sibling::w:r[1][w:fldChar/@w:fldCharType='separate']";   //првый снизу separate от найденного поля
+                    strXPath="following-sibling::w:r[1][w:fldChar/@w:fldCharType='separate']";   //╨┐╤А╨▓╤Л╨╣ ╤Б╨╜╨╕╨╖╤Г separate ╨╛╤В ╨╜╨░╨╣╨┤╨╡╨╜╨╜╨╛╨│╨╛ ╨┐╨╛╨╗╤П
                     domNodesSeparate=domNodes.item(i).selectNodes(strXPath);
                     if (domNodesSeparate.length>0)
                         strXPath="following-sibling::*";
@@ -916,7 +929,7 @@ class (TBaseXmlDoc) TMsDocForm(strFormPath_)
                             if  (sFieldPart=="end")
                                 if (iSubFld==0)
 
-                                    //вставляем и закругляеся
+                                    //╨▓╤Б╤В╨░╨▓╨╗╤П╨╡╨╝ ╨╕ ╨╖╨░╨║╤А╤Г╨│╨╗╤П╨╡╤Б╤П
                                     domNewNode=domDoc.createNode(XML_NODE_ELEMENT, "w:r", sMsNs);
                                     domNode=domNodesBegin.item(j).parentNode.insertBefore(domNewNode,domNodesBegin.item(j));
                                     //<w:t xml:space="preserve">Ivan </w:t>
@@ -932,15 +945,15 @@ class (TBaseXmlDoc) TMsDocForm(strFormPath_)
                             elif(sFieldPart=="begin")
                                 iSubFld=iSubFld+1;
                             end;
-                            //чистим
+                            //╤З╨╕╤Б╤В╨╕╨╝
                             domNodesBegin.item(j).parentNode.removeChild(domNodesBegin.item(j));
 
                         end; //for j 
                     else
                         DebugPrint("separate not found. i="+i);
                         /**/
-                                    //вставляем после найденного поля
-                                    //range и в него separate
+                                    //╨▓╤Б╤В╨░╨▓╨╗╤П╨╡╨╝ ╨┐╨╛╤Б╨╗╨╡ ╨╜╨░╨╣╨┤╨╡╨╜╨╜╨╛╨│╨╛ ╨┐╨╛╨╗╤П
+                                    //range ╨╕ ╨▓ ╨╜╨╡╨│╨╛ separate
                                     domNewNode=domDoc.createNode(XML_NODE_ELEMENT, "w:r", sMsNs);
                                     nodeSeparate=domNodes.item(i).parentNode.insertBefore(domNewNode,domNodes.item(i).nextSibling);
 
@@ -948,11 +961,11 @@ class (TBaseXmlDoc) TMsDocForm(strFormPath_)
                                     domNewNode.SetAttribute("w:fldCharType","separate");
                                     nodeSeparate.appendChild(domNewNode);
 
-                                    //а после них range и в него значение переменной
+                                    //╨░ ╨┐╨╛╤Б╨╗╨╡ ╨╜╨╕╤Е range ╨╕ ╨▓ ╨╜╨╡╨│╨╛ ╨╖╨╜╨░╤З╨╡╨╜╨╕╨╡ ╨┐╨╡╤А╨╡╨╝╨╡╨╜╨╜╨╛╨╣
                                     domNewNode=domDoc.createNode(XML_NODE_ELEMENT, "w:r", sMsNs);
                                     nodeFildValue=domNodes.item(i).parentNode.insertBefore(domNewNode,nodeSeparate.nextSibling);
 
-                                    //копируем стиль
+                                    //╨║╨╛╨┐╨╕╤А╤Г╨╡╨╝ ╤Б╤В╨╕╨╗╤М
                                     domNode=domNodes.item(i).SelectSingleNode("w:rPr");
                                     if ((ValType(domNode)!=V_UNDEF) and (domNode!=NullVal))
                                         //PrintLn(GetTypeName(domNode));
@@ -978,14 +991,14 @@ class (TBaseXmlDoc) TMsDocForm(strFormPath_)
 
     end; //macro SetFieldDocVar
 
-    // 2018-02-05 по заявке ОСС добавили подстановку через поле MERGEFIELD против DOCVARIABLE
-    // MERGEFIELD совместимо с имеющимся шаблоном и видно в шаблоне без alt-F9
+    // 2018-02-05 ╨┐╨╛ ╨╖╨░╤П╨▓╨║╨╡ ╨Ю╨б╨б ╨┤╨╛╨▒╨░╨▓╨╕╨╗╨╕ ╨┐╨╛╨┤╤Б╤В╨░╨╜╨╛╨▓╨║╤Г ╤З╨╡╤А╨╡╨╖ ╨┐╨╛╨╗╨╡ MERGEFIELD ╨┐╤А╨╛╤В╨╕╨▓ DOCVARIABLE
+    // MERGEFIELD ╤Б╨╛╨▓╨╝╨╡╤Б╤В╨╕╨╝╨╛ ╤Б ╨╕╨╝╨╡╤О╤Й╨╕╨╝╤Б╤П ╤И╨░╨▒╨╗╨╛╨╜╨╛╨╝ ╨╕ ╨▓╨╕╨┤╨╜╨╛ ╨▓ ╤И╨░╨▒╨╗╨╛╨╜╨╡ ╨▒╨╡╨╖ alt-F9
     macro SetFieldMerge(strFieldName, v)
         var strXPath;
         var i;
         var domNodes;
 
-        // простое поле
+        // ╨┐╤А╨╛╤Б╤В╨╛╨╡ ╨┐╨╛╨╗╨╡
         
         strXPath="//w:fldSimple[starts-with(normalize-space(attribute::w:instr),'MERGEFIELD "+strFieldName+" ' ) or normalize-space(attribute::w:instr)='MERGEFIELD "+strFieldName+"']";
         domNodes=domDoc.documentElement.selectNodes(strXPath);
@@ -1002,7 +1015,7 @@ class (TBaseXmlDoc) TMsDocForm(strFormPath_)
             domNewNodeT.text=v;
         end;
 
-        // сложное поле (http://officeopenxml.com/WPfields.php)
+        // ╤Б╨╗╨╛╨╢╨╜╨╛╨╡ ╨┐╨╛╨╗╨╡ (http://officeopenxml.com/WPfields.php)
         strXPath="//w:r[starts-with(normalize-space(w:instrText),'MERGEFIELD "+strFieldName+" ' ) or normalize-space(w:instrText)='MERGEFIELD "+strFieldName+"']";
 
         domNodes=domDoc.documentElement.selectNodes(strXPath);
@@ -1015,8 +1028,8 @@ class (TBaseXmlDoc) TMsDocForm(strFormPath_)
     end; //macro SetFieldMerge
 
     macro SetField(strFieldName, v)
-        SetFieldDocVar(strFieldName, v); //через поле DOCVARIABLE
-        SetFieldMerge(strFieldName, v);  //через поле MERGEFIELD
+        SetFieldDocVar(strFieldName, v); //╤З╨╡╤А╨╡╨╖ ╨┐╨╛╨╗╨╡ DOCVARIABLE
+        SetFieldMerge(strFieldName, v);  //╤З╨╡╤А╨╡╨╖ ╨┐╨╛╨╗╨╡ MERGEFIELD
     end; //SetField
 
     macro Save(sDestFolder)
@@ -1029,7 +1042,7 @@ class (TBaseXmlDoc) TMsDocForm(strFormPath_)
         var strTermDst:String;
 
         if ((ValType(sDestFolder)==V_STRING) and (sDestFolder!=""))
-        //режим введён для массового безинтерфейсного формирования файлов     
+        //╤А╨╡╨╢╨╕╨╝ ╨▓╨▓╨╡╨┤╤С╨╜ ╨┤╨╗╤П ╨╝╨░╤Б╤Б╨╛╨▓╨╛╨│╨╛ ╨▒╨╡╨╖╨╕╨╜╤В╨╡╤А╤Д╨╡╨╣╤Б╨╜╨╛╨│╨╛ ╤Д╨╛╤А╨╝╨╕╤А╨╛╨▓╨░╨╜╨╕╤П ╤Д╨░╨╣╨╗╨╛╨▓     
             var sPath=sDestFolder;
             if (DocSave(@sPath))
                 return sPath;
@@ -1042,12 +1055,12 @@ class (TBaseXmlDoc) TMsDocForm(strFormPath_)
                 strArgs=strTermDst;
                 /*
                 if (AutoPrint)
-                //печать
+                //╨┐╨╡╤З╨░╤В╤М
                     if ((ValType(Printer)!=V_UNDEF) and (Printer!=""))
-                        //на указанный принтер
+                        //╨╜╨░ ╤Г╨║╨░╨╖╨░╨╜╨╜╤Л╨╣ ╨┐╤А╨╕╨╜╤В╨╡╤А
                         //strArgs="-pt " +Printer+ " "+ strArgs;
                     else
-                        //на принтер по умолчанию
+                        //╨╜╨░ ╨┐╤А╨╕╨╜╤В╨╡╤А ╨┐╨╛ ╤Г╨╝╨╛╨╗╤З╨░╨╜╨╕╤О
                         //strArgs="-p" + strArgs;
                     end;
                 end;
@@ -1074,20 +1087,20 @@ end; //class TMsDocForm
 
 class (TBaseXmlDoc) TMsXlsForm(strFormPath_)
     var domSharedStrings;
-    var iSharedStringnsOffset=0; //количество шардедстрингс в изначальном файле
-    var aStrings=TArray(); //строки которые надо добавить к SharedStrings. Потом переписать на чтение всех и bimap
-    var domDefSheet;       //лист по умолчанию. может отстутствовать, заполняется автоматически
+    var iSharedStringnsOffset=0; //╨║╨╛╨╗╨╕╤З╨╡╤Б╤В╨▓╨╛ ╤И╨░╤А╨┤╨╡╨┤╤Б╤В╤А╨╕╨╜╨│╤Б ╨▓ ╨╕╨╖╨╜╨░╤З╨░╨╗╤М╨╜╨╛╨╝ ╤Д╨░╨╣╨╗╨╡
+    var aStrings=TArray(); //╤Б╤В╤А╨╛╨║╨╕ ╨║╨╛╤В╨╛╤А╤Л╨╡ ╨╜╨░╨┤╨╛ ╨┤╨╛╨▒╨░╨▓╨╕╤В╤М ╨║ SharedStrings. ╨Я╨╛╤В╨╛╨╝ ╨┐╨╡╤А╨╡╨┐╨╕╤Б╨░╤В╤М ╨╜╨░ ╤З╤В╨╡╨╜╨╕╨╡ ╨▓╤Б╨╡╤Е ╨╕ bimap
+    var domDefSheet;       //╨╗╨╕╤Б╤В ╨┐╨╛ ╤Г╨╝╨╛╨╗╤З╨░╨╜╨╕╤О. ╨╝╨╛╨╢╨╡╤В ╨╛╤В╤Б╤В╤Г╤В╤Б╤В╨▓╨╛╨▓╨░╤В╤М, ╨╖╨░╨┐╨╛╨╗╨╜╤П╨╡╤В╤Б╤П ╨░╨▓╤В╨╛╨╝╨░╤В╨╕╤З╨╡╤Б╨║╨╕
 
     var domWBR;         /* Relationships */
     var aDomSheet=TArray();
     var aSheet=TAssArraySI(); // workbook/sheet1.xml -> 0, workbook/sheet2.xml -> 1
     //var aSheet=TBoostBiMapSI(); // workbook/sheet1.xml -> 0, workbook/sheet2.xml -> 1
     var iRow=0;
-    var domTableSheet;  /* объект Sheet в котором находится текущая таблица           */
-    var iTableRow;      /* номер строки-образца                                       */
-    var iTableCol;      /* номер столбца с которого начинается вывод в строку-образец */
-    var iTableSheetId;  /* атрибут sheetId из sheets/sheet листа в котором находится текущая таблица            */
-    var sTableSheetName;/* название листа на котором номер столбца с которого начинается вывод в строку-образец */
+    var domTableSheet;  /* ╨╛╨▒╤К╨╡╨║╤В Sheet ╨▓ ╨║╨╛╤В╨╛╤А╨╛╨╝ ╨╜╨░╤Е╨╛╨┤╨╕╤В╤Б╤П ╤В╨╡╨║╤Г╤Й╨░╤П ╤В╨░╨▒╨╗╨╕╤Ж╨░           */
+    var iTableRow;      /* ╨╜╨╛╨╝╨╡╤А ╤Б╤В╤А╨╛╨║╨╕-╨╛╨▒╤А╨░╨╖╤Ж╨░                                       */
+    var iTableCol;      /* ╨╜╨╛╨╝╨╡╤А ╤Б╤В╨╛╨╗╨▒╤Ж╨░ ╤Б ╨║╨╛╤В╨╛╤А╨╛╨│╨╛ ╨╜╨░╤З╨╕╨╜╨░╨╡╤В╤Б╤П ╨▓╤Л╨▓╨╛╨┤ ╨▓ ╤Б╤В╤А╨╛╨║╤Г-╨╛╨▒╤А╨░╨╖╨╡╤Ж */
+    var iTableSheetId;  /* ╨░╤В╤А╨╕╨▒╤Г╤В sheetId ╨╕╨╖ sheets/sheet ╨╗╨╕╤Б╤В╨░ ╨▓ ╨║╨╛╤В╨╛╤А╨╛╨╝ ╨╜╨░╤Е╨╛╨┤╨╕╤В╤Б╤П ╤В╨╡╨║╤Г╤Й╨░╤П ╤В╨░╨▒╨╗╨╕╤Ж╨░            */
+    var sTableSheetName;/* ╨╜╨░╨╖╨▓╨░╨╜╨╕╨╡ ╨╗╨╕╤Б╤В╨░ ╨╜╨░ ╨║╨╛╤В╨╛╤А╨╛╨╝ ╨╜╨╛╨╝╨╡╤А ╤Б╤В╨╛╨╗╨▒╤Ж╨░ ╤Б ╨║╨╛╤В╨╛╤А╨╛╨│╨╛ ╨╜╨░╤З╨╕╨╜╨░╨╡╤В╤Б╤П ╨▓╤Л╨▓╨╛╨┤ ╨▓ ╤Б╤В╤А╨╛╨║╤Г-╨╛╨▒╤А╨░╨╖╨╡╤Ж */
     const xmlns_ss="http://schemas.openxmlformats.org/spreadsheetml/2006/main";
     var aSampleAttrName=GetArray("s","customFormat");
     var aSampleAttr=TArray();
@@ -1112,7 +1125,7 @@ class (TBaseXmlDoc) TMsXlsForm(strFormPath_)
 
     end; //macro
 
-    //Лист2!$G$3:$I$7
+    //╨Ы╨╕╤Б╤В2!$G$3:$I$7
     macro SplitCellAdr2(sAdr:String,Sheet:@String,Row:@String,Col:@String,Row2:@String,Col2:@String)
         //const strReCellAdr="^(?:(\\w+)!)?(?:\\$?([A-Z]{1,3}))?(?:\\$?(\\d{1,7}))?(?::(?:\\$?([A-Z]{0,3}))(?:\\$?(\\d{0,7})))?$"; 
         const strReCellAdr="^(?:(\\w+|'[^']+')!)?(?:\\$?([A-Z]{1,3}))?(?:\\$?(\\d{1,7}))?(?::(?:\\$?([A-Z]{0,3}))(?:\\$?(\\d{0,7})))?$"; 
@@ -1139,23 +1152,23 @@ class (TBaseXmlDoc) TMsXlsForm(strFormPath_)
             end;
             return true;
         end;
-        DebugPrint("Ошибка разбора адреса "+sAdr);
+        DebugPrint("╨Ю╤И╨╕╨▒╨║╨░ ╤А╨░╨╖╨▒╨╛╤А╨░ ╨░╨┤╤А╨╡╤Б╨░ "+sAdr);
         return false;
 
     end; //macro
 
-    //Переводит номер колонки в буквенное представление на манер 1->A, 2->B, 3->C
+    //╨Я╨╡╤А╨╡╨▓╨╛╨┤╨╕╤В ╨╜╨╛╨╝╨╡╤А ╨║╨╛╨╗╨╛╨╜╨║╨╕ ╨▓ ╨▒╤Г╨║╨▓╨╡╨╜╨╜╨╛╨╡ ╨┐╤А╨╡╨┤╤Б╤В╨░╨▓╨╗╨╡╨╜╨╕╨╡ ╨╜╨░ ╨╝╨░╨╜╨╡╤А 1->A, 2->B, 3->C
     macro GetColumnAName(i:Integer)
         var s="";
-        var r; //остаток от деления нацело
-        const q=26; //основание новой системы счисления
+        var r; //╨╛╤Б╤В╨░╤В╨╛╨║ ╨╛╤В ╨┤╨╡╨╗╨╡╨╜╨╕╤П ╨╜╨░╤Ж╨╡╨╗╨╛
+        const q=26; //╨╛╤Б╨╜╨╛╨▓╨░╨╜╨╕╨╡ ╨╜╨╛╨▓╨╛╨╣ ╤Б╨╕╤Б╤В╨╡╨╝╤Л ╤Б╤З╨╕╤Б╨╗╨╡╨╜╨╕╤П
 
         macro add(c)
                 s=s+StrFor(CodeFor("A")+c);
         end;
 
         var first=true;
-        while((i>0) or first)  //чтобы 0->A работало
+        while((i>0) or first)  //╤З╤В╨╛╨▒╤Л 0->A ╤А╨░╨▒╨╛╤В╨░╨╗╨╛
             first=false;
             r=mod(i,q);
             add(r);
@@ -1238,7 +1251,7 @@ class (TBaseXmlDoc) TMsXlsForm(strFormPath_)
                 end; 
             end;
         else
-            lastError="ошибка парсинга файла "+sFileName;
+            lastError="╨╛╤И╨╕╨▒╨║╨░ ╨┐╨░╤А╤Б╨╕╨╜╨│╨░ ╤Д╨░╨╣╨╗╨░ "+sFileName;
             DebugPrint(lastError);
         end;
         domCalcChain=false;
@@ -1249,7 +1262,7 @@ class (TBaseXmlDoc) TMsXlsForm(strFormPath_)
         if ((ValType(sFileName)!=V_STRING) or (sFileName==""))
             return false;
         end;
-        //получаем индекс в массиве листов если этот лист уже открыт. если нет, то открываем его
+        //╨┐╨╛╨╗╤Г╤З╨░╨╡╨╝ ╨╕╨╜╨┤╨╡╨║╤Б ╨▓ ╨╝╨░╤Б╤Б╨╕╨▓╨╡ ╨╗╨╕╤Б╤В╨╛╨▓ ╨╡╤Б╨╗╨╕ ╤Н╤В╨╛╤В ╨╗╨╕╤Б╤В ╤Г╨╢╨╡ ╨╛╤В╨║╤А╤Л╤В. ╨╡╤Б╨╗╨╕ ╨╜╨╡╤В, ╤В╨╛ ╨╛╤В╨║╤А╤Л╨▓╨░╨╡╨╝ ╨╡╨│╨╛
         var idx=aSheet.Get(sFileName);
         if (ValType(idx)==V_UNDEF)
             if(not UnZipFile(sFileName))
@@ -1267,7 +1280,7 @@ class (TBaseXmlDoc) TMsXlsForm(strFormPath_)
         return idx;
     end;
 
-    //true если адрес формата A1
+    //true ╨╡╤Б╨╗╨╕ ╨░╨┤╤А╨╡╤Б ╤Д╨╛╤А╨╝╨░╤В╨░ A1
     macro IsCellAddr(s)
         var i,j,c;
         var col="";
@@ -1346,8 +1359,8 @@ class (TBaseXmlDoc) TMsXlsForm(strFormPath_)
         end;
     end;
 
-    //поиск листа по имени
-    //или по номеру (с 1). введено для автоматической подгрузки первого листа
+    //╨┐╨╛╨╕╤Б╨║ ╨╗╨╕╤Б╤В╨░ ╨┐╨╛ ╨╕╨╝╨╡╨╜╨╕
+    //╨╕╨╗╨╕ ╨┐╨╛ ╨╜╨╛╨╝╨╡╤А╤Г (╤Б 1). ╨▓╨▓╨╡╨┤╨╡╨╜╨╛ ╨┤╨╗╤П ╨░╨▓╤В╨╛╨╝╨░╤В╨╕╤З╨╡╤Б╨║╨╛╨╣ ╨┐╨╛╨┤╨│╤А╤Г╨╖╨║╨╕ ╨┐╨╡╤А╨▓╨╛╨│╨╛ ╨╗╨╕╤Б╤В╨░
     macro sheetFind(sheetName)
        var  sPath;
 
@@ -1369,11 +1382,11 @@ class (TBaseXmlDoc) TMsXlsForm(strFormPath_)
             if (nodes.length==1)
                 return nodes.item(0).GetAttribute("Target");
             else
-                lastError="Не найден лист "+sPath+" "+ nodes.length;
+                lastError="╨Э╨╡ ╨╜╨░╨╣╨┤╨╡╨╜ ╨╗╨╕╤Б╤В "+sPath+" "+ nodes.length;
                 DebugPrint(lastError);
             end;
         else
-                lastError="Не найден лист "+sheetName;
+                lastError="╨Э╨╡ ╨╜╨░╨╣╨┤╨╡╨╜ ╨╗╨╕╤Б╤В "+sheetName;
                 DebugPrint(lastError);
         end;
     end;
@@ -1386,7 +1399,7 @@ class (TBaseXmlDoc) TMsXlsForm(strFormPath_)
                 if (ValType(nodeV)==V_UNDEF)
                     nodeV=domCell.AppendChild(domCell.ownerDocument.createNode(XML_NODE_ELEMENT,"v",xmlns_ss));
                 else
-                    //PrintLn("Текущее значение ячейки "+nodeV.Text);
+                    //PrintLn("╨в╨╡╨║╤Г╤Й╨╡╨╡ ╨╖╨╜╨░╤З╨╡╨╜╨╕╨╡ ╤П╤З╨╡╨╣╨║╨╕ "+nodeV.Text);
                 end;
                 nodeV.Text=vv;
                 if (ValType(aa)==V_GENOBJ)
@@ -1410,7 +1423,7 @@ class (TBaseXmlDoc) TMsXlsForm(strFormPath_)
                 //SetV(v,TAssArraySS("s","2"));
                 SetV(String(v));
                 //strAttr="";
-                //strAttr=" s='2'";  //ссылка на cellXfs\xf
+                //strAttr=" s='2'";  //╤Б╤Б╤Л╨╗╨║╨░ ╨╜╨░ cellXfs\xf
                 //td=String(v);
             elif (ValType(v)==V_DATE)
                 if (v==Date(0,0,0))
@@ -1462,7 +1475,7 @@ class (TBaseXmlDoc) TMsXlsForm(strFormPath_)
     macro GetSheetByName(nameSheet)
         var domSheet;
         var pathSheet;
-        //если лист не указан, то берём по-умолчанию, если и он не определён, то читаем первый лист
+        //╨╡╤Б╨╗╨╕ ╨╗╨╕╤Б╤В ╨╜╨╡ ╤Г╨║╨░╨╖╨░╨╜, ╤В╨╛ ╨▒╨╡╤А╤С╨╝ ╨┐╨╛-╤Г╨╝╨╛╨╗╤З╨░╨╜╨╕╤О, ╨╡╤Б╨╗╨╕ ╨╕ ╨╛╨╜ ╨╜╨╡ ╨╛╨┐╤А╨╡╨┤╨╡╨╗╤С╨╜, ╤В╨╛ ╤З╨╕╤В╨░╨╡╨╝ ╨┐╨╡╤А╨▓╤Л╨╣ ╨╗╨╕╤Б╤В
         if ((ValType(nameSheet)==V_UNDEF) or (nameSheet==""))
             if (ValType(domDefSheet)==V_UNDEF)
                 pathSheet=sheetFind(1);
@@ -1475,13 +1488,13 @@ class (TBaseXmlDoc) TMsXlsForm(strFormPath_)
 
         if (ValType(domSheet)==V_UNDEF)
             pathSheet="xl/"+pathSheet;
-            DebugPrint("Лист ",pathSheet);
+            DebugPrint("╨Ы╨╕╤Б╤В ",pathSheet);
             var idx=GetSheetIndex(pathSheet);
             if (ValType(idx)!=V_INTEGER) return false; end;
             domSheet=aDomSheet[idx];
         end;
 
-        //если использовался лист по-умолчанию, а лист по-умолчанию не был определён, то сохранить его
+        //╨╡╤Б╨╗╨╕ ╨╕╤Б╨┐╨╛╨╗╤М╨╖╨╛╨▓╨░╨╗╤Б╤П ╨╗╨╕╤Б╤В ╨┐╨╛-╤Г╨╝╨╛╨╗╤З╨░╨╜╨╕╤О, ╨░ ╨╗╨╕╤Б╤В ╨┐╨╛-╤Г╨╝╨╛╨╗╤З╨░╨╜╨╕╤О ╨╜╨╡ ╨▒╤Л╨╗ ╨╛╨┐╤А╨╡╨┤╨╡╨╗╤С╨╜, ╤В╨╛ ╤Б╨╛╤Е╤А╨░╨╜╨╕╤В╤М ╨╡╨│╨╛
         if ( (ValType(domDefSheet)==V_UNDEF) and ((ValType(nameSheet)==V_UNDEF) or (nameSheet=="")))
             domDefSheet=domSheet;
         end;
@@ -1494,7 +1507,7 @@ class (TBaseXmlDoc) TMsXlsForm(strFormPath_)
         var domCell, domCellValue, domRow;
         var xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main";
 
-        //тормозмить будет, но [@r>'F7'] не работает 
+        //╤В╨╛╤А╨╝╨╛╨╖╨╝╨╕╤В╤М ╨▒╤Г╨┤╨╡╤В, ╨╜╨╛ [@r>'F7'] ╨╜╨╡ ╤А╨░╨▒╨╛╤В╨░╨╡╤В 
         macro GetNextCell
             var nodes=domRow.SelectNodes("x:c");
             if (nodes.length==0)
@@ -1522,13 +1535,13 @@ class (TBaseXmlDoc) TMsXlsForm(strFormPath_)
         if (nodes.length==1)
            domRow=nodes.item(0);
         elif (nodes.length==0)
-            lastError="Не найдена строка "+nameRow+" на листе "+nameSheet+" "+sPath;
+            lastError="╨Э╨╡ ╨╜╨░╨╣╨┤╨╡╨╜╨░ ╤Б╤В╤А╨╛╨║╨░ "+nameRow+" ╨╜╨░ ╨╗╨╕╤Б╤В╨╡ "+nameSheet+" "+sPath;
             sPath="(/x:worksheet/x:sheetData/x:row[@r>"+nameRow+"])[1]";
             //domRow=domSheet.documentElement.SelectSingleNode("x:sheetData").AppendChild(domSheet.createNode(XML_NODE_ELEMENT,"row",xmlns));
             domRow=domSheet.documentElement.SelectSingleNode("x:sheetData").insertBefore(domSheet.createNode(XML_NODE_ELEMENT,"row",xmlns_ss),domSheet.documentElement.SelectSingleNode(sPath));
             domRow.SetAttribute("r",nameRow);
         else
-            //PrintLn("Строк "+nameRow+" на листе "+nodes.length);
+            //PrintLn("╨б╤В╤А╨╛╨║ "+nameRow+" ╨╜╨░ ╨╗╨╕╤Б╤В╨╡ "+nodes.length);
         end;
 
         sPath="x:c[@r='"+nameCol+nameRow+"']";
@@ -1565,7 +1578,7 @@ class (TBaseXmlDoc) TMsXlsForm(strFormPath_)
     end;
 
 
-    /* установить поле. в качестве имени поля может применяться название диапазона или вдрес ячейки */
+    /* ╤Г╤Б╤В╨░╨╜╨╛╨▓╨╕╤В╤М ╨┐╨╛╨╗╨╡. ╨▓ ╨║╨░╤З╨╡╤Б╤В╨▓╨╡ ╨╕╨╝╨╡╨╜╨╕ ╨┐╨╛╨╗╤П ╨╝╨╛╨╢╨╡╤В ╨┐╤А╨╕╨╝╨╡╨╜╤П╤В╤М╤Б╤П ╨╜╨░╨╖╨▓╨░╨╜╨╕╨╡ ╨┤╨╕╨░╨┐╨░╨╖╨╛╨╜╨░ ╨╕╨╗╨╕ ╨▓╨┤╤А╨╡╤Б ╤П╤З╨╡╨╣╨║╨╕ */
     macro SetField(strFieldName, v)
         var nameRange:String;
         var nameSheet:String,nameRow:String,nameCol;
@@ -1573,13 +1586,13 @@ class (TBaseXmlDoc) TMsXlsForm(strFormPath_)
         if (not InitOk) return; end;
 
         if (SplitCellAdr(strFieldName,@nameSheet,@nameRow,@nameCol))
-        //адрес ячейки
+        //╨░╨┤╤А╨╡╤Б ╤П╤З╨╡╨╣╨║╨╕
             SetCell(v,nameSheet,nameRow,nameCol);
         else
-        //адрес диапазона
+        //╨░╨┤╤А╨╡╤Б ╨┤╨╕╨░╨┐╨░╨╖╨╛╨╜╨░
             nameRange=FindRange(strFieldName);
             if (""==nameRange)
-                lastError="Не найден дианазон "+strFieldName;
+                lastError="╨Э╨╡ ╨╜╨░╨╣╨┤╨╡╨╜ ╨┤╨╕╨░╨╜╨░╨╖╨╛╨╜ "+strFieldName;
                 DebugPrint(lastError);
                 return;
             else
@@ -1593,11 +1606,11 @@ class (TBaseXmlDoc) TMsXlsForm(strFormPath_)
                         if ((nameRow==nameRow2) and (nameCol==nameCol2))
                             SetCell(v,nameSheet,nameRow,nameCol);
                         else
-                            lastError="Диапазон "+nameRange+" не из одной ячейки";
+                            lastError="╨Ф╨╕╨░╨┐╨░╨╖╨╛╨╜ "+nameRange+" ╨╜╨╡ ╨╕╨╖ ╨╛╨┤╨╜╨╛╨╣ ╤П╤З╨╡╨╣╨║╨╕";
                             DebugPrint(lastError);
                         end;
                     else
-                        lastError="Ошибка парсинга диапазона"+nameRange;
+                        lastError="╨Ю╤И╨╕╨▒╨║╨░ ╨┐╨░╤А╤Б╨╕╨╜╨│╨░ ╨┤╨╕╨░╨┐╨░╨╖╨╛╨╜╨░"+nameRange;
                         DebugPrint(lastError);
                         return;
                     end;
@@ -1609,7 +1622,7 @@ class (TBaseXmlDoc) TMsXlsForm(strFormPath_)
         //FindRange
     end;
 
-    //часть общей процедуры записи документа. сохраняет SharedStrings
+    //╤З╨░╤Б╤В╤М ╨╛╨▒╤Й╨╡╨╣ ╨┐╤А╨╛╤Ж╨╡╨┤╤Г╤А╤Л ╨╖╨░╨┐╨╕╤Б╨╕ ╨┤╨╛╨║╤Г╨╝╨╡╨╜╤В╨░. ╤Б╨╛╤Е╤А╨░╨╜╤П╨╡╤В SharedStrings
     private macro SaveSharedStrings
         var s;
         var node;
@@ -1625,7 +1638,7 @@ class (TBaseXmlDoc) TMsXlsForm(strFormPath_)
 
     //private macro SaveRowAttr
 
-    /* Инициализация таблицы для вывода xlsx */
+    /* ╨Ш╨╜╨╕╤Ж╨╕╨░╨╗╨╕╨╖╨░╤Ж╨╕╤П ╤В╨░╨▒╨╗╨╕╤Ж╤Л ╨┤╨╗╤П ╨▓╤Л╨▓╨╛╨┤╨░ xlsx */
     macro Table(sParamName)
         var addrRange=FindRange(sParamName);
 
@@ -1646,7 +1659,7 @@ class (TBaseXmlDoc) TMsXlsForm(strFormPath_)
                 else
                     iTableCol=GetColumnNumber(Col)-1;
                 end;
-                iTableRow=Row; //сохраняем
+                iTableRow=Row; //╤Б╨╛╤Е╤А╨░╨╜╤П╨╡╨╝
                 domTableSheet=GetSheetByName(nameSheet);
 
                 domTableNode=domTableSheet.selectSingleNode("/x:worksheet/x:sheetData");
@@ -1657,10 +1670,10 @@ class (TBaseXmlDoc) TMsXlsForm(strFormPath_)
                     //domRow=nodes.item(0);
                     domNewRowNode=nodes.item(0).cloneNode(true);
                 elif (nodes.length==0)
-                    lastError="Не найдена строка "+Row+" на листе "+nameSheet+" "+sPath;
+                    lastError="╨Э╨╡ ╨╜╨░╨╣╨┤╨╡╨╜╨░ ╤Б╤В╤А╨╛╨║╨░ "+Row+" ╨╜╨░ ╨╗╨╕╤Б╤В╨╡ "+nameSheet+" "+sPath;
                     return false;
                 else
-                    lastError="Найдено "+nodes.length+" строк "+Row+" на листе "+nameSheet+" "+sPath;
+                    lastError="╨Э╨░╨╣╨┤╨╡╨╜╨╛ "+nodes.length+" ╤Б╤В╤А╨╛╨║ "+Row+" ╨╜╨░ ╨╗╨╕╤Б╤В╨╡ "+nameSheet+" "+sPath;
                     return false;
                 end;
 
@@ -1680,9 +1693,9 @@ class (TBaseXmlDoc) TMsXlsForm(strFormPath_)
         end;
     end;
 
-    //правка цепочки вычислений. если в шаблоне есть формулы и в результате вставки строки 
-    //адреса ячеек с формулами уплыли, то такая книга не откроется
-    //функция не правит сами формулы!
+    //╨┐╤А╨░╨▓╨║╨░ ╤Ж╨╡╨┐╨╛╤З╨║╨╕ ╨▓╤Л╤З╨╕╤Б╨╗╨╡╨╜╨╕╨╣. ╨╡╤Б╨╗╨╕ ╨▓ ╤И╨░╨▒╨╗╨╛╨╜╨╡ ╨╡╤Б╤В╤М ╤Д╨╛╤А╨╝╤Г╨╗╤Л ╨╕ ╨▓ ╤А╨╡╨╖╤Г╨╗╤М╤В╨░╤В╨╡ ╨▓╤Б╤В╨░╨▓╨║╨╕ ╤Б╤В╤А╨╛╨║╨╕ 
+    //╨░╨┤╤А╨╡╤Б╨░ ╤П╤З╨╡╨╡╨║ ╤Б ╤Д╨╛╤А╨╝╤Г╨╗╨░╨╝╨╕ ╤Г╨┐╨╗╤Л╨╗╨╕, ╤В╨╛ ╤В╨░╨║╨░╤П ╨║╨╜╨╕╨│╨░ ╨╜╨╡ ╨╛╤В╨║╤А╨╛╨╡╤В╤Б╤П
+    //╤Д╤Г╨╜╨║╤Ж╨╕╤П ╨╜╨╡ ╨┐╤А╨░╨▓╨╕╤В ╤Б╨░╨╝╨╕ ╤Д╨╛╤А╨╝╤Г╨╗╤Л!
     private macro ModifCalcChain()
         var i;
         var iNew,iOld;
@@ -1715,7 +1728,7 @@ class (TBaseXmlDoc) TMsXlsForm(strFormPath_)
 
     end;
 
-    //растягивает именованные диапазоны
+    //╤А╨░╤Б╤В╤П╨│╨╕╨▓╨░╨╡╤В ╨╕╨╝╨╡╨╜╨╛╨▓╨░╨╜╨╜╤Л╨╡ ╨┤╨╕╨░╨┐╨░╨╖╨╛╨╜╤Л
     private macro ModifDefinedRange()
         var i;
         var r;
@@ -1730,7 +1743,7 @@ class (TBaseXmlDoc) TMsXlsForm(strFormPath_)
                 end;
                 return "$"+s;
             end;
-        //definedName name="MyTable4">Лист4!$E$9:$H$9</definedName>
+        //definedName name="MyTable4">╨Ы╨╕╤Б╤В4!$E$9:$H$9</definedName>
             var r_new=QuoteSheetName(Sheet)+"!"+MakePart(Col)+MakePart(Row);
             if ((Col2!="") or (ValType(Row2)!=V_UNDEF))
                 r_new=r_new+":"+MakePart(Col2)+MakePart(Row2);
@@ -1763,10 +1776,10 @@ class (TBaseXmlDoc) TMsXlsForm(strFormPath_)
         end;
     end;
 
-    // если в листе есть объединённые по горизонлали ячейки,
-    // то при добавлении строки
-    // надо скопировать в неё объединение с образца
-    // и сдвинуть вниз объединения после
+    // ╨╡╤Б╨╗╨╕ ╨▓ ╨╗╨╕╤Б╤В╨╡ ╨╡╤Б╤В╤М ╨╛╨▒╤К╨╡╨┤╨╕╨╜╤С╨╜╨╜╤Л╨╡ ╨┐╨╛ ╨│╨╛╤А╨╕╨╖╨╛╨╜╨╗╨░╨╗╨╕ ╤П╤З╨╡╨╣╨║╨╕,
+    // ╤В╨╛ ╨┐╤А╨╕ ╨┤╨╛╨▒╨░╨▓╨╗╨╡╨╜╨╕╨╕ ╤Б╤В╤А╨╛╨║╨╕
+    // ╨╜╨░╨┤╨╛ ╤Б╨║╨╛╨┐╨╕╤А╨╛╨▓╨░╤В╤М ╨▓ ╨╜╨╡╤С ╨╛╨▒╤К╨╡╨┤╨╕╨╜╨╡╨╜╨╕╨╡ ╤Б ╨╛╨▒╤А╨░╨╖╤Ж╨░
+    // ╨╕ ╤Б╨┤╨▓╨╕╨╜╤Г╤В╤М ╨▓╨╜╨╕╨╖ ╨╛╨▒╤К╨╡╨┤╨╕╨╜╨╡╨╜╨╕╤П ╨┐╨╛╤Б╨╗╨╡
     macro ModifMergeCells
         var i;
         var r;
@@ -1803,7 +1816,7 @@ class (TBaseXmlDoc) TMsXlsForm(strFormPath_)
     end;
 
 
-    //когда добавляется строка по образцу, существующие строки должны сдвинуться вниз
+    //╨║╨╛╨│╨┤╨░ ╨┤╨╛╨▒╨░╨▓╨╗╤П╨╡╤В╤Б╤П ╤Б╤В╤А╨╛╨║╨░ ╨┐╨╛ ╨╛╨▒╤А╨░╨╖╤Ж╤Г, ╤Б╤Г╤Й╨╡╤Б╤В╨▓╤Г╤О╤Й╨╕╨╡ ╤Б╤В╤А╨╛╨║╨╕ ╨┤╨╛╨╗╨╢╨╜╤Л ╤Б╨┤╨▓╨╕╨╜╤Г╤В╤М╤Б╤П ╨▓╨╜╨╕╨╖
     macro ShiftRow
         var strXPath:String;
         var i,j;
@@ -1833,7 +1846,7 @@ class (TBaseXmlDoc) TMsXlsForm(strFormPath_)
 
     end; //macro ShiftRow
 
-    /* Записать переданный массив как строку ранее опрделённой таблицы см. Table() */
+    /* ╨Ч╨░╨┐╨╕╤Б╨░╤В╤М ╨┐╨╡╤А╨╡╨┤╨░╨╜╨╜╤Л╨╣ ╨╝╨░╤Б╤Б╨╕╨▓ ╨║╨░╨║ ╤Б╤В╤А╨╛╨║╤Г ╤А╨░╨╜╨╡╨╡ ╨╛╨┐╤А╨┤╨╡╨╗╤С╨╜╨╜╨╛╨╣ ╤В╨░╨▒╨╗╨╕╤Ж╤Л ╤Б╨╝. Table() */
     macro WriteRow(ar)
         var strXPath:String;
         var i:Integer;
@@ -1855,7 +1868,7 @@ class (TBaseXmlDoc) TMsXlsForm(strFormPath_)
         if (V_UNDEF==Valtype(domTableSheet))  Table(); end;
 
         if (V_UNDEF==Valtype(domNewRowNode))  
-            lastError="Не определена строка-образец";
+            lastError="╨Э╨╡ ╨╛╨┐╤А╨╡╨┤╨╡╨╗╨╡╨╜╨░ ╤Б╤В╤А╨╛╨║╨░-╨╛╨▒╤А╨░╨╖╨╡╤Ж";
             DebugPrint(lastError);
             return false; 
         end;
@@ -1912,7 +1925,7 @@ class (TBaseXmlDoc) TMsXlsForm(strFormPath_)
         
         SaveSharedStrings();
         domDoc.Save(strWorkDir+"\\xl\\workbook.xml");
-        //запись листов книги
+        //╨╖╨░╨┐╨╕╤Б╤М ╨╗╨╕╤Б╤В╨╛╨▓ ╨║╨╜╨╕╨│╨╕
         aSheet.Rewind;
         while(aSheet.Next)
             aDomSheet[aSheet.CurrentValue].Save(strWorkDir+"\\"+StrSubst(aSheet.CurrentKey,"/","\\"));
@@ -1925,7 +1938,7 @@ class (TBaseXmlDoc) TMsXlsForm(strFormPath_)
         var strTermDst:String;
 
         if ((ValType(sDestFolder)==V_STRING) and (sDestFolder!=""))
-        //режим введён для массового безинтерфейсного формирования файлов     
+        //╤А╨╡╨╢╨╕╨╝ ╨▓╨▓╨╡╨┤╤С╨╜ ╨┤╨╗╤П ╨╝╨░╤Б╤Б╨╛╨▓╨╛╨│╨╛ ╨▒╨╡╨╖╨╕╨╜╤В╨╡╤А╤Д╨╡╨╣╤Б╨╜╨╛╨│╨╛ ╤Д╨╛╤А╨╝╨╕╤А╨╛╨▓╨░╨╜╨╕╤П ╤Д╨░╨╣╨╗╨╛╨▓     
             var sPath=sDestFolder;
             if (DocSave(@sPath))
                 return sPath;
