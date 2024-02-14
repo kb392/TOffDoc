@@ -1,2 +1,3 @@
 *.mac text working-tree-encoding=cp866 encoding=cp866 eol=crlf
 *.odt binary
+*.d32 binary
